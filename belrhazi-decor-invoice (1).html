@@ -1,0 +1,2000 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="theme-color" content="#d4af37"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="بلغازي ديكور"/>
+<meta name="description" content="إدارة عملاء بلغازي ديكور — يعمل بدون إنترنت"/>
+<title>بلغازي ديكور — إدارة العملاء</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cormorant+Garamond:wght@400;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<style>
+/* ═══════════════════════════════════════
+   RESET & DESIGN TOKENS
+═══════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#d4af37; --gold-l:#e8cc6a; --gold-d:#b8962c;
+  --gold-bg:rgba(212,175,55,.08); --gold-ring:rgba(212,175,55,.22);
+  --dark:#0f0f0f; --dark2:#181818; --dark3:#222; --dark4:#2a2a2a;
+  --surface:#1a1a1a; --surface2:#242424;
+  --border:rgba(212,175,55,.18); --border2:rgba(255,255,255,.07);
+  --text:#f5f0e8; --muted:#a09880; --faint:#6b6555;
+  --white:#fff; --green:#10b981; --amber:#d97706; --red:#ef4444;
+  --r:12px; --rl:16px; --rxl:22px;
+  --shadow:0 4px 24px rgba(0,0,0,.5);
+  --shadow-gold:0 4px 24px rgba(212,175,55,.22);
+  --nav-h:68px;
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Amiri',Georgia,serif;
+  background:var(--dark); color:var(--text);
+  min-height:100vh; -webkit-font-smoothing:antialiased;
+  direction:rtl; text-align:right;
+}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-thumb{background:var(--gold-d);border-radius:3px}
+::-webkit-scrollbar-track{background:var(--dark2)}
+
+/* ═══════════ ANIMATIONS ═══════════ */
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes shimmer{0%{background-position:200% center}100%{background-position:-200% center}}
+.anim-in{animation:fadeIn .25s ease}
+.anim-up{animation:slideUp .3s cubic-bezier(.16,1,.3,1)}
+.spin{animation:spin .8s linear infinite;display:inline-block}
+
+/* ═══════════ UTILITY ═══════════ */
+.hidden{display:none!important}
+.flex{display:flex} .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.center{display:flex;align-items:center;justify-content:center}
+.flex1{flex:1} .shrink0{flex-shrink:0}
+.w-full{width:100%} .truncate{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
+
+/* ═══════════ GOLD GRADIENT ═══════════ */
+.gold-grad{background:linear-gradient(135deg,var(--gold) 0%,var(--gold-l) 50%,var(--gold-d) 100%)}
+.gold-text{background:linear-gradient(135deg,var(--gold),var(--gold-l));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+/* ═══════════ HEADER ═══════════ */
+header{
+  background:var(--dark2);border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:50;
+  box-shadow:0 1px 12px rgba(0,0,0,.4);
+}
+.header-inner{
+  max-width:960px;margin:0 auto;padding:12px 18px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+}
+.brand{display:flex;align-items:center;gap:10px}
+.brand h1{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:700;color:var(--text);line-height:1.1}
+.brand p{font-size:9px;color:var(--gold);letter-spacing:.2em;text-transform:uppercase;margin-top:2px}
+.header-right{display:flex;align-items:center;gap:8px}
+.net-badge{
+  display:flex;align-items:center;gap:5px;padding:4px 10px;
+  border-radius:20px;font-size:11px;font-weight:600;
+  border:1px solid;white-space:nowrap;
+}
+.badge-online{color:#10b981;border-color:rgba(16,185,129,.3);background:rgba(16,185,129,.08)}
+.badge-offline{color:var(--amber);border-color:rgba(217,119,6,.3);background:rgba(217,119,6,.08)}
+.dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.dot-green{background:#10b981} .dot-amber{background:var(--amber)}
+
+/* Language selector */
+.lang-wrap{position:relative}
+.lang-sel{
+  appearance:none;background:var(--surface);border:1px solid var(--border);
+  color:var(--text);font-size:12px;font-family:'Amiri',serif;
+  border-radius:10px;padding:6px 28px 6px 12px;cursor:pointer;outline:none;
+  transition:border-color .2s;
+}
+.lang-sel:hover,.lang-sel:focus{border-color:var(--gold)}
+.lang-chev{position:absolute;left:8px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--gold)}
+
+/* ═══════════ BOTTOM NAV ═══════════ */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--dark2);border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-around;
+  height:var(--nav-h);z-index:100;
+  box-shadow:0 -4px 20px rgba(0,0,0,.5);
+}
+.nav-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:4px;padding:8px 4px;cursor:pointer;
+  color:var(--faint);transition:color .2s;border:none;background:transparent;
+  font-family:'Amiri',serif;position:relative;
+}
+.nav-item.active{color:var(--gold)}
+.nav-item svg{transition:transform .2s}
+.nav-item.active svg{transform:scale(1.1)}
+.nav-label{font-size:11px;font-weight:600}
+.nav-dot{
+  position:absolute;top:6px;width:5px;height:5px;border-radius:50%;
+  background:var(--gold);display:none;
+}
+.nav-item.active .nav-dot{display:block}
+
+/* ═══════════ PAGES ═══════════ */
+.page{display:none}
+.page.active{display:block;animation:fadeIn .2s ease}
+main{max-width:960px;margin:0 auto;padding:22px 16px calc(var(--nav-h) + 16px)}
+
+/* ═══════════ STATS ═══════════ */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}
+@media(max-width:480px){.stats-grid{grid-template-columns:1fr}}
+.stat-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--rl);padding:18px 16px;
+  display:flex;align-items:center;gap:12px;
+  box-shadow:var(--shadow);
+}
+.stat-icon{
+  width:44px;height:44px;border-radius:12px;
+  background:var(--gold-bg);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.stat-label{font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:3px;font-weight:600}
+.stat-val{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:700;line-height:1;color:var(--text)}
+.gold-stat{
+  background:linear-gradient(135deg,rgba(212,175,55,.15) 0%,rgba(232,204,106,.08) 100%);
+  border:1px solid rgba(212,175,55,.35);
+  box-shadow:var(--shadow-gold);
+}
+.gold-stat .stat-icon{background:rgba(212,175,55,.12);border-color:rgba(212,175,55,.25)}
+.gold-stat .stat-val{color:var(--gold-l)}
+
+/* ═══════════ SAVE BAR ═══════════ */
+.save-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--gold-bg);border:1px solid var(--border);
+  border-radius:10px;padding:8px 14px;margin-bottom:14px;
+  font-size:12px;color:var(--muted);gap:10px;
+}
+.save-dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
+
+/* ═══════════ TOOLBAR ═══════════ */
+.toolbar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.search-wrap{position:relative;flex:1;min-width:150px}
+.search-icon{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--faint);pointer-events:none}
+.search-input{
+  width:100%;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:10px 40px 10px 14px;
+  font-size:14px;font-family:'Amiri',serif;color:var(--text);outline:none;
+  transition:border-color .2s,box-shadow .2s;
+}
+.search-input::placeholder{color:var(--faint)}
+.search-input:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-ring)}
+.btn-add{
+  display:flex;align-items:center;gap:7px;padding:10px 20px;
+  background:linear-gradient(135deg,var(--gold),var(--gold-d));
+  color:#0f0f0f;border:none;border-radius:var(--r);
+  font-size:14px;font-weight:700;font-family:'Amiri',serif;
+  cursor:pointer;white-space:nowrap;
+  box-shadow:0 4px 16px rgba(212,175,55,.35);
+  transition:box-shadow .2s,transform .1s;
+}
+.btn-add:hover{box-shadow:0 6px 22px rgba(212,175,55,.5)}
+.btn-add:active{transform:scale(.97)}
+.toolbar-right{display:flex;gap:7px;align-items:center}
+.btn-export,.btn-import-lbl{
+  display:flex;align-items:center;gap:5px;padding:8px 12px;
+  border:1px solid var(--border);background:var(--surface);
+  border-radius:var(--r);font-size:12px;font-weight:600;
+  font-family:'Amiri',serif;color:var(--muted);cursor:pointer;
+  transition:border-color .2s,color .2s;
+}
+.btn-export:hover,.btn-import-lbl:hover{border-color:var(--gold);color:var(--gold)}
+
+/* ═══════════ EMPTY STATE ═══════════ */
+.empty{display:flex;flex-direction:column;align-items:center;text-align:center;padding:60px 20px}
+.empty-icon{
+  width:72px;height:72px;border-radius:50%;
+  background:var(--gold-bg);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;margin-bottom:18px;
+}
+.empty h3{font-size:18px;font-weight:700;margin-bottom:6px;color:var(--text)}
+.empty p{font-size:14px;color:var(--muted);margin-bottom:20px}
+.btn-add-first{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 22px;border:1.5px solid var(--gold);
+  background:transparent;color:var(--gold);border-radius:var(--r);
+  font-size:14px;font-weight:600;font-family:'Amiri',serif;cursor:pointer;
+  transition:background .2s,color .2s;
+}
+.btn-add-first:hover{background:var(--gold);color:#0f0f0f}
+
+/* ═══════════ CLIENT CARDS ═══════════ */
+.clients-list{display:flex;flex-direction:column;gap:10px}
+.client-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--rl);padding:16px;
+  box-shadow:var(--shadow);
+  transition:box-shadow .2s,border-color .2s;
+}
+.client-card:hover{box-shadow:var(--shadow-gold);border-color:rgba(212,175,55,.35)}
+.card-top{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px}
+.avatar{
+  width:42px;height:42px;border-radius:50%;
+  background:linear-gradient(135deg,var(--gold),var(--gold-d));
+  color:#0f0f0f;font-size:16px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  box-shadow:0 2px 8px rgba(212,175,55,.3);
+}
+.card-info{flex:1;min-width:0}
+.name-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:5px;flex-wrap:wrap}
+.client-name{font-size:15px;font-weight:700;color:var(--text)}
+.badge{font-size:11px;padding:2px 10px;border-radius:20px;font-weight:600;flex-shrink:0}
+.badge-paid{background:rgba(16,185,129,.15);color:#10b981;border:1px solid rgba(16,185,129,.3)}
+.badge-owed{background:rgba(217,119,6,.12);color:var(--amber);border:1px solid rgba(217,119,6,.3)}
+.meta-row{display:flex;flex-wrap:wrap;gap:5px 12px;font-size:12px;color:var(--muted);margin-bottom:8px}
+.meta-item{display:flex;align-items:center;gap:4px}
+.phone-link{
+  color:var(--gold);text-decoration:none;direction:ltr;display:inline-flex;align-items:center;gap:4px;
+  transition:color .15s;
+}
+.phone-link:hover{color:var(--gold-l)}
+.whatsapp-icon{flex-shrink:0}
+.service-text{font-size:13px;color:var(--muted);margin-bottom:10px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.fin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px}
+.fin-label{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--faint);margin-bottom:2px}
+.fin-val{font-family:'Cormorant Garamond',serif;font-size:14px;font-weight:700}
+.c-green{color:var(--green)} .c-amber{color:var(--amber)} .c-gold{color:var(--gold)}
+.progress-bar{width:100%;height:4px;background:var(--border2);border-radius:99px;overflow:hidden;margin-bottom:10px}
+.progress-fill{height:100%;border-radius:99px;transition:width .5s ease}
+.progress-full{background:linear-gradient(90deg,var(--green),#059669)}
+.progress-partial{background:linear-gradient(90deg,var(--gold),var(--gold-d))}
+.card-actions{display:flex;gap:7px}
+.btn-edit,.btn-del{
+  display:flex;align-items:center;gap:5px;padding:6px 12px;
+  border-radius:8px;font-size:12px;font-weight:600;
+  font-family:'Amiri',serif;cursor:pointer;border:1px solid;
+  transition:background .15s;background:transparent;
+}
+.btn-edit{border-color:rgba(212,175,55,.3);color:var(--gold)}
+.btn-edit:hover{background:rgba(212,175,55,.1)}
+.btn-del{border-color:rgba(239,68,68,.3);color:var(--red)}
+.btn-del:hover{background:rgba(239,68,68,.1)}
+.btn-wa{
+  display:flex;align-items:center;gap:5px;padding:6px 12px;
+  border-radius:8px;font-size:12px;font-weight:600;
+  font-family:'Amiri',serif;cursor:pointer;
+  border:1px solid rgba(37,211,102,.3);color:#25d366;
+  background:transparent;text-decoration:none;
+  transition:background .15s;
+}
+.btn-wa:hover{background:rgba(37,211,102,.1)}
+
+/* ═══════════ NEW ORDER PAGE ═══════════ */
+.page-header{margin-bottom:20px}
+.page-title{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:700;color:var(--text);margin-bottom:4px}
+.page-sub{font-size:13px;color:var(--muted)}
+
+.order-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--rl);padding:22px;
+  box-shadow:var(--shadow);
+}
+.form-group{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+.form-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.form-input{
+  width:100%;background:var(--dark3);border:1px solid var(--border);
+  border-radius:var(--r);padding:11px 14px;font-size:14px;
+  font-family:'Amiri',serif;color:var(--text);outline:none;
+  transition:border-color .2s,box-shadow .2s;
+}
+.form-input::placeholder{color:var(--faint)}
+.form-input:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-ring)}
+.form-input.err{border-color:var(--red);box-shadow:0 0 0 3px rgba(239,68,68,.15)}
+textarea.form-input{resize:vertical;min-height:80px}
+.form-err{font-size:12px;color:var(--red);display:none;margin-top:2px}
+.form-err.show{display:block}
+
+.loc-row{display:flex;gap:8px}
+.loc-row .form-input{flex:1}
+.btn-gps{
+  width:46px;height:46px;flex-shrink:0;border:1.5px solid var(--gold);
+  background:transparent;color:var(--gold);border-radius:var(--r);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  transition:background .15s,color .15s;
+}
+.btn-gps:hover{background:rgba(212,175,55,.12)}
+.btn-gps:disabled{opacity:.4;cursor:not-allowed}
+.gps-msg{font-size:12px;display:none;margin-top:4px}
+.gps-msg.show{display:block}
+.gps-load{color:var(--gold)} .gps-err{color:var(--red)}
+
+.remaining-box{
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--gold-bg);border:1.5px solid rgba(212,175,55,.25);
+  border-radius:var(--r);padding:12px 15px;margin-bottom:14px;
+}
+.remaining-box.paid{background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.3)}
+.remaining-lbl{font-size:13px;font-weight:600;color:var(--muted)}
+.remaining-val{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:var(--gold)}
+.remaining-box.paid .remaining-val{color:var(--green)}
+
+.form-actions{display:flex;gap:10px;margin-top:4px}
+.btn-cancel{
+  flex:1;padding:12px;background:transparent;border:1px solid var(--border);
+  border-radius:var(--r);font-size:14px;font-weight:600;
+  font-family:'Amiri',serif;color:var(--muted);cursor:pointer;transition:background .15s;
+}
+.btn-cancel:hover{background:var(--surface2)}
+.btn-submit{
+  flex:2;padding:12px;border:none;border-radius:var(--r);
+  background:linear-gradient(135deg,var(--gold),var(--gold-d));
+  font-size:14px;font-weight:700;font-family:'Amiri',serif;color:#0f0f0f;
+  cursor:pointer;box-shadow:0 4px 16px rgba(212,175,55,.35);
+  transition:box-shadow .2s,transform .1s;
+}
+.btn-submit:hover{box-shadow:0 6px 22px rgba(212,175,55,.5)}
+.btn-submit:active{transform:scale(.97)}
+
+/* ═══════════ INVOICE PAGE ═══════════ */
+.invoice-controls{
+  display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;align-items:center;
+}
+.client-select-wrap{flex:1;min-width:200px}
+.client-select{
+  width:100%;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:11px 14px;
+  font-size:14px;font-family:'Amiri',serif;color:var(--text);outline:none;
+  transition:border-color .2s;cursor:pointer;
+}
+.client-select:focus{border-color:var(--gold)}
+.btn-gen-invoice{
+  display:flex;align-items:center;gap:7px;padding:11px 20px;
+  background:linear-gradient(135deg,var(--gold),var(--gold-d));
+  color:#0f0f0f;border:none;border-radius:var(--r);
+  font-size:14px;font-weight:700;font-family:'Amiri',serif;
+  cursor:pointer;white-space:nowrap;
+  box-shadow:0 4px 16px rgba(212,175,55,.35);
+  transition:box-shadow .2s,transform .1s;
+}
+.btn-gen-invoice:hover{box-shadow:0 6px 22px rgba(212,175,55,.5)}
+.btn-gen-invoice:active{transform:scale(.97)}
+
+.btn-export-img{
+  display:flex;align-items:center;gap:7px;padding:10px 18px;
+  border:1.5px solid var(--gold);background:transparent;
+  color:var(--gold);border-radius:var(--r);
+  font-size:13px;font-weight:700;font-family:'Amiri',serif;
+  cursor:pointer;white-space:nowrap;
+  transition:background .2s,color .2s;
+}
+.btn-export-img:hover{background:rgba(212,175,55,.12)}
+
+.btn-send-wa{
+  display:flex;align-items:center;gap:7px;padding:10px 18px;
+  border:1.5px solid rgba(37,211,102,.5);background:transparent;
+  color:#25d366;border-radius:var(--r);
+  font-size:13px;font-weight:700;font-family:'Amiri',serif;
+  cursor:pointer;white-space:nowrap;
+  transition:background .2s,color .2s;
+}
+.btn-send-wa:hover{background:rgba(37,211,102,.12)}
+.btn-send-wa:disabled{opacity:.5;cursor:not-allowed}
+
+/* WhatsApp instruction popup */
+.wa-popup-overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.65);backdrop-filter:blur(6px);
+  z-index:300;align-items:center;justify-content:center;padding:20px;
+}
+.wa-popup-overlay.open{display:flex}
+.wa-popup{
+  background:var(--surface);border:1px solid rgba(37,211,102,.3);
+  border-radius:var(--rxl);padding:28px 24px;
+  max-width:340px;width:100%;text-align:center;
+  box-shadow:0 8px 40px rgba(0,0,0,.6);
+  animation:slideUp .3s cubic-bezier(.16,1,.3,1);
+}
+.wa-popup-icon{
+  width:60px;height:60px;border-radius:50%;
+  background:rgba(37,211,102,.12);border:1px solid rgba(37,211,102,.3);
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 16px;
+}
+.wa-popup-title{
+  font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;
+  color:var(--text);margin-bottom:10px;
+}
+.wa-popup-msg{
+  font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:22px;
+}
+.wa-popup-hint{
+  background:rgba(37,211,102,.08);border:1px solid rgba(37,211,102,.2);
+  border-radius:10px;padding:10px 14px;
+  font-size:13px;font-weight:600;color:#25d366;
+  margin-bottom:20px;
+}
+.wa-popup-btn{
+  width:100%;padding:12px;border:none;border-radius:var(--r);
+  background:linear-gradient(135deg,#25d366,#128c5e);
+  font-size:14px;font-weight:700;font-family:'Amiri',serif;color:#fff;
+  cursor:pointer;box-shadow:0 4px 16px rgba(37,211,102,.3);
+  transition:box-shadow .2s,transform .1s;
+}
+.wa-popup-btn:hover{box-shadow:0 6px 22px rgba(37,211,102,.45)}
+.wa-popup-btn:active{transform:scale(.97)}
+
+.invoice-placeholder{
+  text-align:center;padding:50px 20px;color:var(--faint);
+}
+.invoice-placeholder svg{margin-bottom:14px;opacity:.4}
+.invoice-placeholder p{font-size:14px}
+
+/* ═══════════ INVOICE DOCUMENT (BON DE COMMANDE) ═══════════ */
+#invoice-document{
+  background:#fff;color:#111;
+  border-radius:var(--rl);overflow:hidden;
+  box-shadow:0 8px 40px rgba(0,0,0,.6);
+  font-family:'Amiri',Georgia,serif;
+  direction:rtl;text-align:right;
+  margin-bottom:16px;
+}
+.inv-top{
+  background:linear-gradient(135deg,#0f0f0f 0%,#1a1a1a 100%);
+  padding:28px 30px 22px;
+  border-bottom:3px solid #d4af37;
+  display:flex;align-items:flex-start;justify-content:space-between;
+  gap:20px;flex-wrap:wrap;
+}
+.inv-logo-area{display:flex;align-items:center;gap:14px}
+.inv-brand-name{
+  font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:700;
+  color:#d4af37;line-height:1.1;
+}
+.inv-brand-sub{
+  font-size:10px;color:rgba(212,175,55,.7);letter-spacing:.2em;
+  text-transform:uppercase;margin-top:3px;
+}
+.inv-doc-info{text-align:left}
+.inv-doc-title{
+  font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;
+  color:#d4af37;margin-bottom:6px;
+}
+.inv-doc-num{font-size:12px;color:rgba(255,255,255,.7);margin-bottom:3px}
+.inv-doc-date{font-size:12px;color:rgba(255,255,255,.7)}
+
+.inv-divider{height:1px;background:linear-gradient(90deg,transparent,#d4af37,transparent);margin:0}
+
+.inv-body{padding:24px 30px}
+
+.inv-parties{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px}
+.inv-party-box{
+  background:#f9f7f2;border:1px solid #e8e0c8;
+  border-radius:10px;padding:16px;
+}
+.inv-party-title{
+  font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;
+  color:#b8962c;margin-bottom:10px;border-bottom:1px solid #e8e0c8;padding-bottom:6px;
+}
+.inv-party-name{font-size:15px;font-weight:700;color:#111;margin-bottom:5px}
+.inv-party-detail{font-size:12px;color:#555;margin-bottom:3px;display:flex;align-items:center;gap:5px}
+
+.inv-table{width:100%;border-collapse:collapse;margin-bottom:22px;font-size:13px}
+.inv-table th{
+  background:linear-gradient(135deg,#d4af37,#b8962c);
+  color:#fff;padding:10px 14px;font-weight:700;font-size:12px;
+  letter-spacing:.05em;
+}
+.inv-table th:first-child{border-radius:0 8px 0 0}
+.inv-table th:last-child{border-radius:8px 0 0 0}
+.inv-table td{padding:10px 14px;border-bottom:1px solid #f0ede5;color:#333}
+.inv-table tr:last-child td{border-bottom:none}
+.inv-table tr:nth-child(even) td{background:#fafaf8}
+.inv-table .text-center{text-align:center}
+.inv-table .text-left{text-align:left}
+
+.inv-totals{
+  display:flex;justify-content:flex-end;margin-bottom:22px;
+}
+.inv-totals-box{
+  background:#f9f7f2;border:1px solid #e8e0c8;
+  border-radius:12px;padding:16px 22px;min-width:260px;
+}
+.inv-total-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:6px 0;border-bottom:1px solid #ede9de;font-size:13px;
+}
+.inv-total-row:last-child{border-bottom:none}
+.inv-total-row.grand{
+  padding-top:10px;margin-top:4px;
+  font-size:16px;font-weight:700;
+}
+.inv-total-lbl{color:#555}
+.inv-total-val{font-family:'Cormorant Garamond',serif;font-weight:700;color:#111}
+.inv-total-row.grand .inv-total-val{color:#d4af37;font-size:20px}
+.inv-total-row.paid-row .inv-total-val{color:#059669}
+.inv-total-row.rem-row .inv-total-val{color:#d97706}
+.inv-total-row.rem-row.all-paid .inv-total-val{color:#059669}
+
+.inv-status-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  background:linear-gradient(135deg,#fffbeb,#fef3c7);
+  border:1px solid #fde68a;border-radius:10px;
+  padding:12px 18px;margin-bottom:22px;
+}
+.inv-status-bar.paid{
+  background:linear-gradient(135deg,#ecfdf5,#d1fae5);
+  border-color:#a7f3d0;
+}
+.inv-status-lbl{font-size:13px;font-weight:600;color:#555}
+.inv-status-badge{
+  font-size:12px;font-weight:700;padding:4px 14px;border-radius:20px;
+  background:#d97706;color:#fff;
+}
+.inv-status-bar.paid .inv-status-badge{background:#059669}
+.inv-progress-wrap{margin-bottom:22px}
+.inv-progress-lbl{display:flex;justify-content:space-between;font-size:12px;color:#888;margin-bottom:6px}
+.inv-progress-bar{height:8px;background:#e8e0c8;border-radius:99px;overflow:hidden}
+.inv-progress-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#d4af37,#b8962c);transition:width .5s}
+
+.inv-notes{
+  background:#f9f7f2;border:1px solid #e8e0c8;
+  border-radius:10px;padding:14px 18px;margin-bottom:22px;
+}
+.inv-notes-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#b8962c;margin-bottom:8px}
+.inv-notes-text{font-size:13px;color:#444;line-height:1.7}
+
+.inv-footer-bar{
+  background:linear-gradient(135deg,#0f0f0f,#1a1a1a);
+  border-top:2px solid #d4af37;
+  padding:16px 30px;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:10px;
+}
+.inv-footer-txt{font-size:11px;color:rgba(212,175,55,.75);letter-spacing:.05em}
+.inv-footer-brand{
+  font-family:'Cormorant Garamond',serif;font-size:14px;
+  color:#d4af37;font-weight:700;
+}
+
+/* ═══════════ IMAGE PREVIEW OVERLAY ═══════════ */
+.img-preview-overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.95);
+  z-index:500;flex-direction:column;align-items:center;justify-content:flex-start;
+  overflow-y:auto;
+}
+.img-preview-overlay.open{display:flex}
+.img-preview-bar{
+  width:100%;display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px;flex-shrink:0;
+  background:rgba(0,0,0,.6);backdrop-filter:blur(8px);
+  position:sticky;top:0;z-index:10;
+}
+.img-preview-title{
+  font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:700;
+  color:#d4af37;
+}
+.img-preview-close{
+  width:36px;height:36px;border-radius:50%;border:none;
+  background:rgba(255,255,255,.1);color:#fff;
+  font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:background .15s;
+}
+.img-preview-close:hover{background:rgba(255,255,255,.2)}
+.img-preview-hint{
+  width:100%;max-width:500px;margin:14px 16px 10px;
+  background:rgba(37,211,102,.15);border:1px solid rgba(37,211,102,.4);
+  border-radius:12px;padding:12px 16px;flex-shrink:0;
+}
+.img-preview-hint-main{
+  font-size:15px;font-weight:700;color:#25d366;margin-bottom:4px;text-align:center;
+}
+.img-preview-hint-sub{
+  font-size:12px;color:rgba(255,255,255,.7);text-align:center;line-height:1.5;
+}
+.img-preview-img{
+  width:100%;max-width:500px;margin:0 16px 16px;
+  border-radius:10px;box-shadow:0 4px 30px rgba(0,0,0,.8);
+  display:block;cursor:pointer;
+  -webkit-touch-callout:default;
+}
+.img-preview-actions{
+  width:100%;max-width:500px;margin:0 16px 30px;
+  display:flex;gap:10px;flex-shrink:0;
+}
+.img-preview-dl{
+  flex:1;padding:13px;border:1.5px solid rgba(212,175,55,.5);background:transparent;
+  border-radius:var(--r);font-size:14px;font-weight:700;
+  font-family:'Amiri',serif;color:var(--gold);cursor:pointer;
+  transition:background .15s;
+}
+.img-preview-dl:hover{background:rgba(212,175,55,.1)}
+.img-preview-wa{
+  flex:1;padding:13px;border:none;
+  background:linear-gradient(135deg,#25d366,#128c5e);
+  border-radius:var(--r);font-size:14px;font-weight:700;
+  font-family:'Amiri',serif;color:#fff;cursor:pointer;
+  box-shadow:0 4px 16px rgba(37,211,102,.3);
+  transition:box-shadow .15s;
+}
+.img-preview-wa:hover{box-shadow:0 6px 22px rgba(37,211,102,.45)}
+
+/* ═══════════ OVERLAYS & MODALS ═══════════ */
+.overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.7);backdrop-filter:blur(6px);
+  z-index:200;align-items:flex-end;justify-content:center;
+}
+@media(min-width:600px){.overlay{align-items:center;padding:16px}}
+.overlay.open{display:flex}
+
+.modal{
+  background:var(--surface);width:100%;max-width:520px;
+  border-radius:22px 22px 0 0;max-height:92vh;overflow-y:auto;
+  border:1px solid var(--border);
+}
+@media(min-width:600px){.modal{border-radius:var(--rl)}}
+.modal-head{
+  position:sticky;top:0;background:var(--surface);border-bottom:1px solid var(--border);
+  padding:14px 20px;display:flex;align-items:center;justify-content:space-between;z-index:10;
+}
+.modal-icon-box{
+  width:32px;height:32px;border-radius:9px;
+  background:linear-gradient(135deg,var(--gold),var(--gold-d));
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.modal-t{font-size:15px;font-weight:700;color:var(--text)}
+.modal-st{font-size:11px;color:var(--faint);margin-top:1px}
+.btn-close{
+  width:30px;height:30px;border-radius:50%;border:none;background:transparent;
+  color:var(--faint);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:background .15s;
+}
+.btn-close:hover{background:var(--surface2);color:var(--text)}
+.modal-body{padding:18px 20px 28px;display:flex;flex-direction:column;gap:0}
+
+/* ═══════════ DELETE MODAL ═══════════ */
+.del-panel{
+  background:var(--surface);width:100%;max-width:360px;
+  border-radius:var(--rxl);padding:28px 24px;text-align:center;
+  margin:16px;border:1px solid var(--border);
+}
+.del-icon{
+  width:52px;height:52px;border-radius:50%;background:rgba(239,68,68,.12);
+  display:flex;align-items:center;justify-content:center;margin:0 auto 14px;
+  border:1px solid rgba(239,68,68,.3);
+}
+.del-t{font-size:18px;font-weight:700;margin-bottom:6px;color:var(--text)}
+.del-d{font-size:13px;color:var(--muted);margin-bottom:5px}
+.del-n{font-size:14px;font-weight:700;margin-bottom:22px;color:var(--text)}
+.del-actions{display:flex;gap:10px}
+.btn-del-cancel{
+  flex:1;padding:11px;border:1px solid var(--border);background:transparent;
+  border-radius:var(--r);font-size:14px;font-weight:600;
+  font-family:'Amiri',serif;color:var(--muted);cursor:pointer;transition:background .15s;
+}
+.btn-del-cancel:hover{background:var(--surface2)}
+.btn-del-confirm{
+  flex:1;padding:11px;border:none;border-radius:var(--r);
+  background:var(--red);font-size:14px;font-weight:700;
+  font-family:'Amiri',serif;color:#fff;cursor:pointer;
+  transition:background .15s,transform .1s;
+}
+.btn-del-confirm:hover{background:#dc2626}
+.btn-del-confirm:active{transform:scale(.97)}
+
+/* ═══════════ TOAST ═══════════ */
+.toast{
+  display:none;position:fixed;top:16px;right:16px;z-index:9999;pointer-events:none;
+  background:var(--surface2);border:1px solid rgba(212,175,55,.3);border-radius:12px;
+  padding:10px 16px;font-size:13px;font-weight:600;color:var(--text);
+  box-shadow:0 4px 24px rgba(0,0,0,.5);align-items:center;gap:8px;
+  max-width:280px;
+}
+.toast.show{display:flex;animation:fadeIn .25s ease}
+
+/* ═══════════ FOOTER ═══════════ */
+footer{text-align:center;padding:16px;font-size:11px;color:var(--faint);font-family:'Cormorant Garamond',serif;padding-bottom:calc(var(--nav-h) + 16px)}
+
+/* ═══════════ RESPONSIVE ═══════════ */
+@media(max-width:480px){
+  .inv-parties{grid-template-columns:1fr}
+  .inv-top{flex-direction:column}
+  .inv-doc-info{text-align:right}
+  .inv-totals{justify-content:stretch}
+  .inv-totals-box{min-width:100%;width:100%}
+  main{padding:16px 12px calc(var(--nav-h) + 16px)}
+}
+</style>
+</head>
+<body>
+
+<!-- TOAST -->
+<div id="toast" class="toast">
+  <svg width="14" height="14" fill="none" stroke="var(--gold)" stroke-width="2.5" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+  </svg>
+  <span id="toast-txt"></span>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <svg width="32" height="32" viewBox="0 0 36 36" fill="none" style="flex-shrink:0">
+        <polygon points="18,2 34,18 18,34 2,18" fill="none" stroke="#d4af37" stroke-width="1.5"/>
+        <polygon points="18,8 28,18 18,28 8,18" fill="none" stroke="#d4af37" stroke-width="1" opacity=".5"/>
+        <polygon points="18,13 23,18 18,23 13,18" fill="#d4af37"/>
+        <line x1="18" y1="2" x2="18" y2="8" stroke="#d4af37" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="2"  y1="18" x2="8"  y2="18" stroke="#d4af37" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="34" y1="18" x2="28" y2="18" stroke="#d4af37" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="18" y1="34" x2="18" y2="28" stroke="#d4af37" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <div>
+        <h1 id="brand-name">بلغازي ديكور</h1>
+        <p id="brand-sub">إدارة العملاء</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div id="net-badge" class="net-badge badge-online">
+        <span id="net-dot" class="dot dot-green"></span>
+        <span id="net-txt">متصل</span>
+      </div>
+      <div class="lang-wrap">
+        <select id="lang-sel" class="lang-sel">
+          <option value="ar" selected>العربية</option>
+          <option value="en">English</option>
+        </select>
+        <svg class="lang-chev" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- MAIN CONTENT -->
+<main>
+
+  <!-- ══════════════ PAGE: CLIENT LIST ══════════════ -->
+  <div id="page-clients" class="page active">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">
+          <svg width="22" height="22" fill="none" stroke="#d4af37" stroke-width="1.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+        </div>
+        <div>
+          <div id="stat-c-lbl" class="stat-label">العملاء الإجمالي</div>
+          <div id="stat-c-val" class="stat-val">0</div>
+        </div>
+      </div>
+      <div class="stat-card gold-stat">
+        <div class="stat-icon">
+          <svg width="22" height="22" fill="none" stroke="#d4af37" stroke-width="1.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+        </div>
+        <div>
+          <div id="stat-b-lbl" class="stat-label">إجمالي الرصيد المتبقي</div>
+          <div id="stat-b-val" class="stat-val">0.00 درهم</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="save-bar">
+      <div style="display:flex;align-items:center;gap:7px">
+        <span class="save-dot" id="save-dot"></span>
+        <span id="save-txt">البيانات محفوظة محلياً على جهازك</span>
+      </div>
+      <span id="last-saved" style="font-size:11px;color:var(--faint)"></span>
+    </div>
+
+    <div class="toolbar">
+      <div class="search-wrap">
+        <svg class="search-icon" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+        <input id="search" type="text" class="search-input" placeholder="بحث عن عميل..."/>
+      </div>
+      <div class="toolbar-right">
+        <button id="btn-export" class="btn-export">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+          </svg>
+          <span id="export-lbl">تصدير</span>
+        </button>
+        <label id="import-lbl-btn" class="btn-import-lbl" style="cursor:pointer">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+          </svg>
+          <span id="import-lbl">استيراد</span>
+          <input id="file-import" type="file" accept=".json" style="display:none"/>
+        </label>
+      </div>
+    </div>
+
+    <div id="client-list"></div>
+  </div>
+
+  <!-- ══════════════ PAGE: NEW ORDER ══════════════ -->
+  <div id="page-order" class="page">
+    <div class="page-header">
+      <div id="order-page-title" class="page-title">طلب جديد</div>
+      <div id="order-page-sub" class="page-sub">أضف عميلاً جديداً أو سجّل طلباً</div>
+    </div>
+
+    <div class="order-card">
+      <input type="hidden" id="edit-id"/>
+
+      <div class="form-group">
+        <label id="lbl-name" class="form-label">اسم العميل</label>
+        <input id="f-name" type="text" class="form-input" placeholder="أدخل اسم العميل"/>
+        <span id="err-name" class="form-err"></span>
+      </div>
+
+      <div class="form-group">
+        <label id="lbl-phone" class="form-label">رقم الهاتف</label>
+        <input id="f-phone" type="tel" class="form-input" placeholder="أدخل رقم الهاتف" dir="ltr"/>
+        <span id="err-phone" class="form-err"></span>
+      </div>
+
+      <div class="form-group">
+        <label id="lbl-service" class="form-label">تفاصيل الخدمة</label>
+        <textarea id="f-service" class="form-input" rows="3" placeholder="صف الخدمة المقدمة..."></textarea>
+        <span id="err-service" class="form-err"></span>
+      </div>
+
+      <div class="form-group">
+        <label id="lbl-loc" class="form-label">الموقع (اختياري)</label>
+        <div class="loc-row">
+          <input id="f-loc" type="text" class="form-input" placeholder="أدخل العنوان يدوياً"/>
+          <button id="btn-gps" class="btn-gps" type="button">
+            <svg id="gps-svg" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+          </button>
+        </div>
+        <span id="gps-msg" class="gps-msg"></span>
+      </div>
+
+      <div class="grid2" style="margin-bottom:14px">
+        <div class="form-group" style="margin-bottom:0">
+          <label id="lbl-total" class="form-label">السعر الإجمالي (درهم)</label>
+          <input id="f-total" type="number" class="form-input" placeholder="0.00" min="0" step="0.01" dir="ltr"/>
+          <span id="err-total" class="form-err"></span>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label id="lbl-paid" class="form-label">المبلغ المدفوع (درهم)</label>
+          <input id="f-paid" type="number" class="form-input" placeholder="0.00" min="0" step="0.01" dir="ltr"/>
+          <span id="err-paid" class="form-err"></span>
+        </div>
+      </div>
+
+      <div id="rem-box" class="remaining-box">
+        <span id="rem-lbl" class="remaining-lbl">الرصيد المتبقي:</span>
+        <span id="rem-val" class="remaining-val">0.00 درهم</span>
+      </div>
+
+      <div class="form-actions">
+        <button id="btn-cancel" class="btn-cancel">إلغاء</button>
+        <button id="btn-submit" class="btn-submit">حفظ وإنشاء الطلب</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ PAGE: INVOICE ══════════════ -->
+  <div id="page-invoice" class="page">
+    <div class="page-header">
+      <div id="inv-page-title" class="page-title">بون دو كوماند</div>
+      <div id="inv-page-sub" class="page-sub">إنشاء وتصدير الفاتورة الرسمية</div>
+    </div>
+
+    <div class="invoice-controls">
+      <div class="client-select-wrap">
+        <select id="client-select" class="client-select">
+          <option value="">-- اختر عميلاً --</option>
+        </select>
+      </div>
+      <button id="btn-gen-invoice" class="btn-gen-invoice">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        <span id="gen-inv-lbl">إنشاء الفاتورة</span>
+      </button>
+      <button id="btn-export-img" class="btn-export-img hidden">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+        </svg>
+        <span id="export-img-lbl">تصدير كصورة</span>
+      </button>
+      <button id="btn-send-wa" class="btn-send-wa hidden">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.553 4.116 1.522 5.852L0 24l6.335-1.507A11.951 11.951 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.882a9.88 9.88 0 01-5.017-1.368l-.36-.214-3.732.888.939-3.636-.235-.374A9.882 9.882 0 012.118 12C2.118 6.555 6.555 2.118 12 2.118S21.882 6.555 21.882 12 17.445 21.882 12 21.882z"/>
+        </svg>
+        <span id="send-wa-lbl">إرسال عبر واتساب</span>
+      </button>
+    </div>
+
+    <div id="invoice-placeholder" class="invoice-placeholder">
+      <svg width="60" height="60" fill="none" stroke="#d4af37" stroke-width="1" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+      </svg>
+      <p id="inv-ph-txt">اختر عميلاً ثم اضغط "إنشاء الفاتورة"</p>
+    </div>
+
+    <div id="invoice-document" class="hidden"></div>
+  </div>
+
+</main>
+
+<footer>© 2025 Belrhazi Décor &nbsp;·&nbsp; بلغازي ديكور</footer>
+
+<!-- BOTTOM NAVIGATION -->
+<nav class="bottom-nav">
+  <button class="nav-item active" data-page="clients" onclick="switchPage('clients')">
+    <span class="nav-dot"></span>
+    <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+    </svg>
+    <span id="nav-lbl-clients" class="nav-label">العملاء</span>
+  </button>
+  <button class="nav-item" data-page="order" onclick="switchPage('order')">
+    <span class="nav-dot"></span>
+    <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+    </svg>
+    <span id="nav-lbl-order" class="nav-label">طلب جديد</span>
+  </button>
+  <button class="nav-item" data-page="invoice" onclick="switchPage('invoice')">
+    <span class="nav-dot"></span>
+    <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+    </svg>
+    <span id="nav-lbl-invoice" class="nav-label">الفاتورة</span>
+  </button>
+</nav>
+
+<!-- IMAGE PREVIEW OVERLAY -->
+<div id="img-preview-ov" class="img-preview-overlay">
+  <div class="img-preview-bar">
+    <span class="img-preview-title" id="img-preview-title">صورة الفاتورة</span>
+    <button class="img-preview-close" onclick="closeImgPreview()">✕</button>
+  </div>
+  <div class="img-preview-hint">
+    <div class="img-preview-hint-main" id="img-hint-main">📱 اضغط مطولاً على الصورة ← حفظ الصورة</div>
+    <div class="img-preview-hint-sub" id="img-hint-sub">ستُحفظ مباشرة في معرض هاتفك</div>
+  </div>
+  <img id="img-preview-img" class="img-preview-img" src="" alt="invoice"/>
+  <div class="img-preview-actions">
+    <button class="img-preview-dl" id="img-preview-dl-btn" onclick="imgPreviewDownload()">⬇ تحميل مباشر</button>
+    <button class="img-preview-wa hidden" id="img-preview-wa-btn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="display:inline;vertical-align:middle;margin-left:4px"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.553 4.116 1.522 5.852L0 24l6.335-1.507A11.951 11.951 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.882a9.88 9.88 0 01-5.017-1.368l-.36-.214-3.732.888.939-3.636-.235-.374A9.882 9.882 0 012.118 12C2.118 6.555 6.555 2.118 12 2.118S21.882 6.555 21.882 12 17.445 21.882 12 21.882z"/></svg>
+      فتح واتساب
+    </button>
+  </div>
+</div>
+
+<!-- DELETE OVERLAY -->
+<div id="del-ov" class="overlay">
+  <div class="del-panel anim-up">
+    <div class="del-icon">
+      <svg width="24" height="24" fill="none" stroke="#ef4444" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+      </svg>
+    </div>
+    <div id="del-t" class="del-t">تأكيد الحذف</div>
+    <div id="del-d" class="del-d">هل أنت متأكد من حذف هذا العميل؟ لا يمكن التراجع.</div>
+    <div id="del-n" class="del-n"></div>
+    <div class="del-actions">
+      <button id="del-cancel" class="btn-del-cancel">إلغاء</button>
+      <button id="del-confirm" class="btn-del-confirm">نعم، احذف</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ─────────────────────────────────────
+   TRANSLATIONS
+───────────────────────────────────── */
+var TX = {
+  ar: {
+    brandName:"بلغازي ديكور", brandSub:"إدارة العملاء",
+    statClients:"العملاء الإجمالي", statBalance:"إجمالي الرصيد المتبقي",
+    searchPH:"بحث عن عميل...",
+    noClients:"لا يوجد عملاء بعد", noClientsDesc:"ابدأ بإضافة أول عميل لك",
+    addFirstBtn:"إضافة أول عميل",
+    lblName:"اسم العميل", lblPhone:"رقم الهاتف",
+    lblService:"تفاصيل الخدمة", lblLoc:"الموقع (اختياري)",
+    lblTotal:"السعر الإجمالي (درهم)", lblPaid:"المبلغ المدفوع (درهم)",
+    lblRem:"الرصيد المتبقي:",
+    phName:"أدخل اسم العميل", phPhone:"أدخل رقم الهاتف",
+    phService:"صف الخدمة المقدمة...", phLoc:"أدخل العنوان يدوياً",
+    btnCancel:"إلغاء", btnCreate:"حفظ وإنشاء الطلب", btnUpdate:"حفظ التعديلات",
+    errName:"اسم العميل مطلوب", errPhone:"رقم الهاتف مطلوب",
+    errService:"تفاصيل الخدمة مطلوبة",
+    errTotal:"السعر الإجمالي مطلوب", errPaid:"المبلغ المدفوع مطلوب",
+    gpsLoad:"جاري تحديد الموقع...", gpsErr:"تعذر تحديد الموقع. أدخله يدوياً.",
+    delT:"تأكيد الحذف", delD:"هل أنت متأكد من حذف هذا العميل؟ لا يمكن التراجع.",
+    delCancel:"إلغاء", delOk:"نعم، احذف",
+    badgePaid:"مكتمل", badgeOwed:"متبقي",
+    colT:"الإجمالي", colP:"المدفوع", colR:"المتبقي",
+    btnEdit:"تعديل", btnDel:"حذف",
+    tAdded:"تم حفظ الطلب بنجاح ✓", tUpdated:"تم حفظ التعديلات بنجاح ✓", tDeleted:"تم الحذف بنجاح ✓",
+    tExported:"تم تصدير البيانات ✓", tImported:"تم استيراد البيانات بنجاح ✓",
+    tImgExported:"تم تصدير الفاتورة كصورة ✓",
+    exportLbl:"تصدير", importLbl:"استيراد",
+    netOnline:"متصل", netOffline:"غير متصل",
+    savedBar:"البيانات محفوظة محلياً على جهازك", lastSaved:"آخر حفظ: ",
+    navClients:"العملاء", navOrder:"طلب جديد", navInvoice:"الفاتورة",
+    orderTitle:"طلب جديد", orderSub:"أضف عميلاً جديداً أو سجّل طلباً",
+    invTitle:"بون دو كوماند", invSub:"إنشاء وتصدير الفاتورة الرسمية",
+    genInv:"إنشاء الفاتورة", exportImg:"تصدير كصورة", sendWa:"إرسال عبر واتساب",
+    selectClient:"-- اختر عميلاً --",
+    invPlaceholder:"اختر عميلاً ثم اضغط \"إنشاء الفاتورة\"",
+    invBonDeCommande:"بون دو كوماند",
+    invNum:"رقم الطلب:", invDate:"التاريخ:", invRef:"المرجع:",
+    invFrom:"البائع", invFromName:"بلغازي ديكور",
+    invFromAddr:"المغرب", invFromPhone:"بلغازي ديكور",
+    invTo:"العميل",
+    invSrv:"الخدمة", invQty:"الكمية", invUnit:"الوحدة", invPrice:"السعر الإجمالي",
+    invTotal:"المجموع الكلي:", invPaid:"المدفوع:", invRem:"المتبقي:",
+    invStatusPending:"في الانتظار", invStatusPaid:"مدفوع",
+    invPaymentStatus:"حالة الدفع:", invProgLbl:"نسبة التسديد",
+    invNotes:"ملاحظات", invDefaultNote:"شكراً لثقتكم في بلغازي ديكور. يُرجى سداد المبلغ المتبقي عند الانتهاء من الخدمة.",
+    invFooterNote:"بلغازي ديكور — جودة في كل تفصيل",
+    invLocation:"الموقع:", invPhone:"الهاتف:",
+    fmt: function(v){ return v + " درهم"; },
+    fmtS: function(v){ return v + " د"; }
+  },
+  en: {
+    brandName:"Belrhazi Décor", brandSub:"Client Management",
+    statClients:"Total Clients", statBalance:"Total Outstanding Balance",
+    searchPH:"Search clients...",
+    noClients:"No clients yet", noClientsDesc:"Start by adding your first client",
+    addFirstBtn:"Add First Client",
+    lblName:"Client Name", lblPhone:"Phone Number",
+    lblService:"Service Details", lblLoc:"Location (Optional)",
+    lblTotal:"Total Price (MAD)", lblPaid:"Amount Paid (MAD)",
+    lblRem:"Remaining Balance:",
+    phName:"Enter client name", phPhone:"Enter phone number",
+    phService:"Describe the service...", phLoc:"Enter address manually",
+    btnCancel:"Cancel", btnCreate:"Save Order", btnUpdate:"Save Changes",
+    errName:"Client name is required", errPhone:"Phone number is required",
+    errService:"Service details are required",
+    errTotal:"Total price is required", errPaid:"Amount paid is required",
+    gpsLoad:"Locating...", gpsErr:"Could not get location. Enter manually.",
+    delT:"Confirm Delete", delD:"Are you sure? This cannot be undone.",
+    delCancel:"Cancel", delOk:"Yes, Delete",
+    badgePaid:"Paid", badgeOwed:"Outstanding",
+    colT:"Total", colP:"Paid", colR:"Remaining",
+    btnEdit:"Edit", btnDel:"Delete",
+    tAdded:"Order saved successfully ✓", tUpdated:"Changes saved ✓", tDeleted:"Deleted ✓",
+    tExported:"Data exported ✓", tImported:"Data imported ✓",
+    tImgExported:"Invoice exported as image ✓",
+    exportLbl:"Export", importLbl:"Import",
+    netOnline:"Online", netOffline:"Offline",
+    savedBar:"Data saved locally on your device", lastSaved:"Last saved: ",
+    navClients:"Clients", navOrder:"New Order", navInvoice:"Invoice",
+    orderTitle:"New Order", orderSub:"Add a new client or record an order",
+    invTitle:"Bon de Commande", invSub:"Generate and export the formal invoice",
+    genInv:"Generate Invoice", exportImg:"Export as Image", sendWa:"Send via WhatsApp",
+    selectClient:"-- Select a client --",
+    invPlaceholder:"Select a client then press \"Generate Invoice\"",
+    invBonDeCommande:"Bon de Commande",
+    invNum:"Order No.:", invDate:"Date:", invRef:"Reference:",
+    invFrom:"Seller", invFromName:"Belrhazi Décor",
+    invFromAddr:"Morocco", invFromPhone:"Belrhazi Décor",
+    invTo:"Client",
+    invSrv:"Service", invQty:"Qty", invUnit:"Unit", invPrice:"Total Price",
+    invTotal:"Grand Total:", invPaid:"Paid:", invRem:"Remaining:",
+    invStatusPending:"Pending", invStatusPaid:"Paid",
+    invPaymentStatus:"Payment Status:", invProgLbl:"Payment Progress",
+    invNotes:"Notes", invDefaultNote:"Thank you for choosing Belrhazi Décor. Please settle the remaining balance upon completion of service.",
+    invFooterNote:"Belrhazi Décor — Quality in every detail",
+    invLocation:"Location:", invPhone:"Phone:",
+    fmt: function(v){ return "MAD " + v; },
+    fmtS: function(v){ return "MAD " + v; }
+  }
+};
+
+/* ─────────────────────────────────────
+   STATE
+───────────────────────────────────── */
+var LANG = "ar";
+var DEL_ID = null;
+var toastTmr = null;
+var STORE = "belrhazi_v3";
+var CURRENT_PAGE = "clients";
+var INV_COUNTER_KEY = "belrhazi_inv_counter";
+var CURRENT_INVOICE_WA_NUM = "";
+
+/* ─────────────────────────────────────
+   SERVICE WORKER
+───────────────────────────────────── */
+(function registerSW() {
+  if (!("serviceWorker" in navigator)) return;
+  var SW = [
+    "var CACHE='belrhazi-v4';",
+    "self.addEventListener('install',function(e){self.skipWaiting();});",
+    "self.addEventListener('activate',function(e){e.waitUntil(self.clients.claim());e.waitUntil(caches.keys().then(function(k){return Promise.all(k.filter(function(x){return x!==CACHE;}).map(function(x){return caches.delete(x);}));}));});",
+    "self.addEventListener('fetch',function(e){if(e.request.method!=='GET')return;e.respondWith(caches.match(e.request).then(function(c){var n=fetch(e.request).then(function(r){if(r&&r.status===200&&r.type==='basic'){caches.open(CACHE).then(function(ch){ch.put(e.request,r.clone());});}return r;});return c||n;}).catch(function(){return caches.match(e.request);}));});"
+  ].join("");
+  var blob = new Blob([SW], {type:"text/javascript"});
+  navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(function(){});
+})();
+
+/* ─────────────────────────────────────
+   STORAGE
+───────────────────────────────────── */
+function loadClients() {
+  try { return JSON.parse(localStorage.getItem(STORE) || "[]"); }
+  catch(e) { return []; }
+}
+
+function saveClients(list) {
+  try {
+    localStorage.setItem(STORE, JSON.stringify(list));
+    localStorage.setItem(STORE + "_ts", new Date().toISOString());
+    updateSaveBar();
+  } catch(e) {
+    toast("⚠ تعذر الحفظ — الذاكرة ممتلئة");
+  }
+}
+
+function updateSaveBar() {
+  var ts = localStorage.getItem(STORE + "_ts");
+  var t  = TX[LANG];
+  setText("save-txt", t.savedBar);
+  if (ts) {
+    try {
+      var d = new Date(ts);
+      var timeStr = d.toLocaleTimeString(LANG === "ar" ? "ar-MA" : "en-GB", {hour:"2-digit", minute:"2-digit"});
+      setText("last-saved", t.lastSaved + timeStr);
+    } catch(e) {}
+  }
+}
+
+function uid() {
+  return typeof crypto !== "undefined" && crypto.randomUUID
+    ? crypto.randomUUID()
+    : "c" + Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
+
+function nextInvoiceNum() {
+  var n = parseInt(localStorage.getItem(INV_COUNTER_KEY) || "0") + 1;
+  localStorage.setItem(INV_COUNTER_KEY, String(n));
+  return String(n).padStart(4, "0");
+}
+
+/* ─────────────────────────────────────
+   EXPORT / IMPORT
+───────────────────────────────────── */
+function exportData() {
+  var data = { appVersion:"belrhazi-v3", exportedAt:new Date().toISOString(), clients:loadClients() };
+  var blob = new Blob([JSON.stringify(data, null, 2)], {type:"application/json"});
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement("a");
+  a.href     = url;
+  a.download = "belrhazi-clients-" + new Date().toISOString().slice(0,10) + ".json";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast(TX[LANG].tExported);
+}
+
+function importData(file) {
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var parsed = JSON.parse(e.target.result);
+      var list = Array.isArray(parsed) ? parsed
+               : (parsed.clients && Array.isArray(parsed.clients)) ? parsed.clients
+               : null;
+      if (!list) throw new Error("Invalid format");
+      saveClients(list);
+      toast(TX[LANG].tImported);
+      renderStats();
+      renderClients();
+      populateClientSelect();
+    } catch(err) {
+      toast("⚠ ملف غير صالح");
+    }
+  };
+  reader.readAsText(file);
+}
+
+/* ─────────────────────────────────────
+   DOM HELPERS
+───────────────────────────────────── */
+function $(id) { return document.getElementById(id); }
+function setText(id, v) { var e=$(id); if(e) e.textContent=v; }
+function setPH(id, v)   { var e=$(id); if(e) e.placeholder=v; }
+
+/* ─────────────────────────────────────
+   NAVIGATION
+───────────────────────────────────── */
+function switchPage(page) {
+  CURRENT_PAGE = page;
+  var pages = ["clients","order","invoice"];
+  pages.forEach(function(p) {
+    var pg = $("page-" + p);
+    var btn = document.querySelector('.nav-item[data-page="' + p + '"]');
+    if (pg) pg.classList.toggle("active", p === page);
+    if (btn) btn.classList.toggle("active", p === page);
+  });
+  if (page === "order") {
+    resetOrderForm();
+  }
+  if (page === "invoice") {
+    populateClientSelect();
+  }
+}
+
+/* ─────────────────────────────────────
+   LANGUAGE
+───────────────────────────────────── */
+function setLang(l) {
+  LANG = l;
+  document.documentElement.lang = l;
+  document.body.style.direction  = l === "ar" ? "rtl" : "ltr";
+  document.body.style.textAlign  = l === "ar" ? "right" : "left";
+  applyTX();
+  renderStats();
+  renderClients();
+  populateClientSelect();
+}
+
+function applyTX() {
+  var tx = TX[LANG];
+  setText("brand-name",         tx.brandName);
+  setText("brand-sub",          tx.brandSub);
+  setText("stat-c-lbl",         tx.statClients);
+  setText("stat-b-lbl",         tx.statBalance);
+  setPH("search",               tx.searchPH);
+  setText("lbl-name",           tx.lblName);
+  setText("lbl-phone",          tx.lblPhone);
+  setText("lbl-service",        tx.lblService);
+  setText("lbl-loc",            tx.lblLoc);
+  setText("lbl-total",          tx.lblTotal);
+  setText("lbl-paid",           tx.lblPaid);
+  setText("rem-lbl",            tx.lblRem);
+  setPH("f-name",               tx.phName);
+  setPH("f-phone",              tx.phPhone);
+  setPH("f-service",            tx.phService);
+  setPH("f-loc",                tx.phLoc);
+  setText("btn-cancel",         tx.btnCancel);
+  setText("btn-submit",         tx.btnCreate);
+  setText("del-t",              tx.delT);
+  setText("del-d",              tx.delD);
+  setText("del-cancel",         tx.delCancel);
+  setText("del-confirm",        tx.delOk);
+  setText("export-lbl",         tx.exportLbl);
+  setText("import-lbl",         tx.importLbl);
+  setText("net-txt",            navigator.onLine ? tx.netOnline : tx.netOffline);
+  setText("nav-lbl-clients",    tx.navClients);
+  setText("nav-lbl-order",      tx.navOrder);
+  setText("nav-lbl-invoice",    tx.navInvoice);
+  setText("order-page-title",   tx.orderTitle);
+  setText("order-page-sub",     tx.orderSub);
+  setText("inv-page-title",     tx.invTitle);
+  setText("inv-page-sub",       tx.invSub);
+  setText("gen-inv-lbl",        tx.genInv);
+  setText("export-img-lbl",     tx.exportImg);
+  setText("send-wa-lbl",        tx.sendWa);
+  setText("inv-ph-txt",         tx.invPlaceholder);
+  calcRem();
+  updateSaveBar();
+}
+
+/* ─────────────────────────────────────
+   NETWORK STATUS
+───────────────────────────────────── */
+function setNetStatus(online) {
+  var badge = $("net-badge");
+  var dot   = $("net-dot");
+  var txt   = $("net-txt");
+  if (online) {
+    badge.className = "net-badge badge-online";
+    dot.className   = "dot dot-green";
+    txt.textContent = TX[LANG].netOnline;
+  } else {
+    badge.className = "net-badge badge-offline";
+    dot.className   = "dot dot-amber";
+    txt.textContent = TX[LANG].netOffline;
+    toast("📴 " + (LANG === "ar" ? "غير متصل — التطبيق يعمل بدون إنترنت" : "Offline — app works without internet"));
+  }
+}
+
+/* ─────────────────────────────────────
+   STATS
+───────────────────────────────────── */
+function renderStats() {
+  var clients = loadClients();
+  var outstanding = 0;
+  for (var i = 0; i < clients.length; i++) {
+    var r = clients[i].totalPrice - clients[i].amountPaid;
+    if (r > 0) outstanding += r;
+  }
+  setText("stat-c-val", String(clients.length));
+  setText("stat-b-val", TX[LANG].fmt(outstanding.toFixed(2)));
+}
+
+/* ─────────────────────────────────────
+   RENDER CLIENTS
+───────────────────────────────────── */
+function renderClients() {
+  var tx  = TX[LANG];
+  var q   = ($("search").value || "").toLowerCase().trim();
+  var all = loadClients();
+  var list = q ? all.filter(function(c) {
+    return c.name.toLowerCase().indexOf(q) !== -1
+      || c.phone.indexOf(q) !== -1
+      || (c.serviceDetails || "").toLowerCase().indexOf(q) !== -1;
+  }) : all;
+
+  var wrap = $("client-list");
+
+  if (list.length === 0) {
+    var btn = all.length === 0
+      ? '<button id="btn-empty" class="btn-add-first">'
+          + '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>'
+          + esc(tx.addFirstBtn) + '</button>'
+      : "";
+    wrap.innerHTML = '<div class="empty">'
+      + '<div class="empty-icon"><svg width="36" height="36" fill="none" stroke="#d4af37" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg></div>'
+      + '<h3>' + esc(tx.noClients) + '</h3>'
+      + '<p>'  + esc(tx.noClientsDesc) + '</p>'
+      + btn + '</div>';
+    var eb = $("btn-empty");
+    if (eb) eb.addEventListener("click", function(){ switchPage("order"); });
+    return;
+  }
+
+  var html = '<div class="clients-list">';
+  for (var i = 0; i < list.length; i++) html += buildCard(list[i], tx);
+  html += "</div>";
+  wrap.innerHTML = html;
+
+  wrap.querySelectorAll("[data-edit]").forEach(function(b) {
+    b.addEventListener("click", function() { openEdit(this.getAttribute("data-edit")); });
+  });
+  wrap.querySelectorAll("[data-del]").forEach(function(b) {
+    b.addEventListener("click", function() { openDel(this.getAttribute("data-del")); });
+  });
+}
+
+function buildCard(c, tx) {
+  var rem    = Math.max(0, c.totalPrice - c.amountPaid);
+  var isPaid = rem === 0;
+  var pct    = c.totalPrice > 0 ? Math.min(100, (c.amountPaid / c.totalPrice) * 100) : 0;
+  var fmt    = TX[LANG].fmtS;
+  var av     = c.name.length > 0 ? c.name[0].toUpperCase() : "?";
+  var dateStr = "";
+  try {
+    dateStr = new Date(c.createdAt).toLocaleDateString(
+      LANG === "ar" ? "ar-MA" : "en-GB",
+      { year:"numeric", month:"short", day:"numeric" }
+    );
+  } catch(e) { dateStr = (c.createdAt || "").slice(0,10); }
+
+  var phone = (c.phone || "").replace(/\s/g, "");
+  var waNum = phone.startsWith("+") ? phone.replace(/\D/g,"") : "212" + phone.replace(/^0/, "").replace(/\D/g,"");
+  var waLink = "https://wa.me/" + waNum;
+
+  var locHtml = c.location
+    ? '<span class="meta-item truncate" style="max-width:160px">'
+        + '<svg width="11" height="11" fill="none" stroke="#d4af37" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>'
+        + esc(c.location) + '</span>'
+    : "";
+
+  return '<div class="client-card">'
+    + '<div class="card-top">'
+      + '<div class="avatar">' + esc(av) + '</div>'
+      + '<div class="card-info">'
+        + '<div class="name-row">'
+          + '<span class="client-name">' + esc(c.name) + '</span>'
+          + '<span class="badge ' + (isPaid ? 'badge-paid' : 'badge-owed') + '">' + esc(isPaid ? tx.badgePaid : tx.badgeOwed) + '</span>'
+        + '</div>'
+        + '<div class="meta-row">'
+          + '<span class="meta-item">'
+            + '<a href="' + waLink + '" target="_blank" rel="noopener" class="phone-link">'
+              + '<svg class="whatsapp-icon" width="13" height="13" viewBox="0 0 24 24" fill="#25d366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.553 4.116 1.522 5.852L0 24l6.335-1.507A11.951 11.951 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.882a9.88 9.88 0 01-5.017-1.368l-.36-.214-3.732.888.939-3.636-.235-.374A9.882 9.882 0 012.118 12C2.118 6.555 6.555 2.118 12 2.118S21.882 6.555 21.882 12 17.445 21.882 12 21.882z"/></svg>'
+              + '<span dir="ltr">' + esc(c.phone) + '</span>'
+            + '</a>'
+          + '</span>'
+          + locHtml
+          + '<span style="font-size:11px;color:var(--faint)">' + esc(dateStr) + '</span>'
+        + '</div>'
+        + '<div class="service-text">' + esc(c.serviceDetails) + '</div>'
+        + '<div class="fin-grid">'
+          + finCol(tx.colT, fmt(c.totalPrice.toFixed(2)), "")
+          + finCol(tx.colP, fmt(c.amountPaid.toFixed(2)), "c-green")
+          + finCol(tx.colR, fmt(rem.toFixed(2)), isPaid ? "c-green" : "c-amber")
+        + '</div>'
+        + '<div class="progress-bar"><div class="progress-fill ' + (isPaid ? 'progress-full' : 'progress-partial') + '" style="width:' + pct + '%"></div></div>'
+      + '</div>'
+    + '</div>'
+    + '<div class="card-actions">'
+      + '<a href="' + waLink + '" target="_blank" rel="noopener" class="btn-wa">'
+          + '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.553 4.116 1.522 5.852L0 24l6.335-1.507A11.951 11.951 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.882a9.88 9.88 0 01-5.017-1.368l-.36-.214-3.732.888.939-3.636-.235-.374A9.882 9.882 0 012.118 12C2.118 6.555 6.555 2.118 12 2.118S21.882 6.555 21.882 12 17.445 21.882 12 21.882z"/></svg>'
+          + 'WhatsApp'
+      + '</a>'
+      + '<button class="btn-edit" data-edit="' + esc(c.id) + '">'
+          + '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>'
+          + esc(tx.btnEdit)
+      + '</button>'
+      + '<button class="btn-del" data-del="' + esc(c.id) + '">'
+          + '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>'
+          + esc(tx.btnDel)
+      + '</button>'
+    + '</div>'
+  + '</div>';
+}
+
+function finCol(lbl, val, cls) {
+  return '<div><div class="fin-label">' + esc(lbl) + '</div>'
+       + '<div class="fin-val ' + cls + '">' + esc(val) + '</div></div>';
+}
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+/* ─────────────────────────────────────
+   ORDER FORM
+───────────────────────────────────── */
+function resetOrderForm() {
+  var tx = TX[LANG];
+  $("edit-id").value = "";
+  $("f-name").value = $("f-phone").value = $("f-service").value = $("f-loc").value = "";
+  $("f-total").value = $("f-paid").value = "";
+  setText("btn-submit", tx.btnCreate);
+  setText("btn-cancel",  tx.btnCancel);
+  clearErrs();
+  calcRem();
+}
+
+function openEdit(id) {
+  var tx = TX[LANG];
+  var c  = loadClients().filter(function(x){ return x.id === id; })[0];
+  if (!c) return;
+  $("edit-id").value    = c.id;
+  $("f-name").value     = c.name;
+  $("f-phone").value    = c.phone;
+  $("f-service").value  = c.serviceDetails;
+  $("f-loc").value      = c.location || "";
+  $("f-total").value    = String(c.totalPrice);
+  $("f-paid").value     = String(c.amountPaid);
+  setText("btn-submit", tx.btnUpdate);
+  setText("btn-cancel",  tx.btnCancel);
+  clearErrs();
+  calcRem();
+  switchPage("order");
+}
+
+/* ─────────────────────────────────────
+   DELETE MODAL
+───────────────────────────────────── */
+function openDel(id) {
+  var c  = loadClients().filter(function(x){ return x.id === id; })[0];
+  if (!c) return;
+  DEL_ID = id;
+  var tx = TX[LANG];
+  setText("del-t",      tx.delT);
+  setText("del-d",      tx.delD);
+  setText("del-cancel", tx.delCancel);
+  setText("del-confirm",tx.delOk);
+  setText("del-n", "\u201C" + c.name + "\u201D");
+  $("del-ov").classList.add("open");
+}
+
+function closeDel() {
+  DEL_ID = null;
+  $("del-ov").classList.remove("open");
+}
+
+function confirmDel() {
+  if (!DEL_ID) return;
+  saveClients(loadClients().filter(function(c){ return c.id !== DEL_ID; }));
+  closeDel();
+  toast(TX[LANG].tDeleted);
+  renderStats();
+  renderClients();
+  populateClientSelect();
+}
+
+/* ─────────────────────────────────────
+   REMAINING BALANCE CALC
+───────────────────────────────────── */
+function calcRem() {
+  var total = parseFloat($("f-total").value) || 0;
+  var paid  = parseFloat($("f-paid").value)  || 0;
+  var rem   = Math.max(0, total - paid);
+  var box   = $("rem-box");
+  var val   = $("rem-val");
+  if (!box || !val) return;
+  val.textContent = TX[LANG].fmt(rem.toFixed(2));
+  if (rem === 0 && total > 0) {
+    box.classList.add("paid");
+    val.style.color = "var(--green)";
+  } else {
+    box.classList.remove("paid");
+    val.style.color = "var(--gold)";
+  }
+}
+
+/* ─────────────────────────────────────
+   GPS
+───────────────────────────────────── */
+function startGPS() {
+  var tx  = TX[LANG];
+  var btn = $("btn-gps");
+  var msg = $("gps-msg");
+  if (!navigator.geolocation) {
+    msg.textContent = tx.gpsErr; msg.className = "gps-msg show gps-err"; return;
+  }
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"><svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></span>';
+  msg.textContent = tx.gpsLoad; msg.className = "gps-msg show gps-load";
+  navigator.geolocation.getCurrentPosition(
+    function(p) {
+      $("f-loc").value = p.coords.latitude.toFixed(6) + ", " + p.coords.longitude.toFixed(6);
+      btn.disabled = false; btn.innerHTML = gpsIconHTML(); msg.className = "gps-msg";
+    },
+    function() {
+      btn.disabled = false; btn.innerHTML = gpsIconHTML();
+      msg.textContent = tx.gpsErr; msg.className = "gps-msg show gps-err";
+    },
+    {timeout:10000, enableHighAccuracy:true}
+  );
+}
+
+function gpsIconHTML() {
+  return '<svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">'
+    + '<path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>'
+    + '<path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>';
+}
+
+/* ─────────────────────────────────────
+   FORM SUBMIT
+───────────────────────────────────── */
+function submitForm() {
+  var tx      = TX[LANG];
+  var name    = ($("f-name").value    || "").trim();
+  var phone   = ($("f-phone").value   || "").trim();
+  var service = ($("f-service").value || "").trim();
+  var loc     = ($("f-loc").value     || "").trim();
+  var total   = parseFloat($("f-total").value);
+  var paid    = parseFloat($("f-paid").value);
+  var editId  = $("edit-id").value;
+
+  clearErrs();
+  var ok = true;
+  if (!name)        { showErr("name",    tx.errName);    ok = false; }
+  if (!phone)       { showErr("phone",   tx.errPhone);   ok = false; }
+  if (!service)     { showErr("service", tx.errService); ok = false; }
+  if (isNaN(total)) { showErr("total",   tx.errTotal);   ok = false; }
+  if (isNaN(paid))  { showErr("paid",    tx.errPaid);    ok = false; }
+  if (!ok) return;
+
+  var clients = loadClients();
+  if (editId) {
+    for (var i = 0; i < clients.length; i++) {
+      if (clients[i].id === editId) {
+        clients[i].name = name; clients[i].phone = phone;
+        clients[i].serviceDetails = service; clients[i].location = loc;
+        clients[i].totalPrice = total; clients[i].amountPaid = paid;
+        break;
+      }
+    }
+    saveClients(clients);
+    toast(tx.tUpdated);
+  } else {
+    clients.unshift({
+      id: uid(), name: name, phone: phone,
+      serviceDetails: service, location: loc,
+      totalPrice: total, amountPaid: paid,
+      createdAt: new Date().toISOString()
+    });
+    saveClients(clients);
+    toast(tx.tAdded);
+  }
+  renderStats();
+  renderClients();
+  populateClientSelect();
+  resetOrderForm();
+  switchPage("clients");
+}
+
+/* ─────────────────────────────────────
+   FORM ERRORS
+───────────────────────────────────── */
+function showErr(f, msg) {
+  var inp = $("f-"+f), err = $("err-"+f);
+  if (inp) inp.classList.add("err");
+  if (err) { err.textContent = msg; err.classList.add("show"); }
+}
+function clearErr(f) {
+  var inp = $("f-"+f), err = $("err-"+f);
+  if (inp) inp.classList.remove("err");
+  if (err) { err.textContent = ""; err.classList.remove("show"); }
+}
+function clearErrs() {
+  ["name","phone","service","total","paid"].forEach(clearErr);
+  var gm = $("gps-msg");
+  if (gm) { gm.className = "gps-msg"; gm.textContent = ""; }
+}
+
+/* ─────────────────────────────────────
+   TOAST
+───────────────────────────────────── */
+function toast(msg) {
+  var box = $("toast");
+  $("toast-txt").textContent = msg;
+  box.classList.add("show");
+  clearTimeout(toastTmr);
+  toastTmr = setTimeout(function(){ box.classList.remove("show"); }, 3200);
+}
+
+/* ─────────────────────────────────────
+   INVOICE — POPULATE CLIENT SELECT
+───────────────────────────────────── */
+function populateClientSelect() {
+  var sel = $("client-select");
+  if (!sel) return;
+  var tx      = TX[LANG];
+  var clients = loadClients();
+  var val     = sel.value;
+  sel.innerHTML = '<option value="">' + esc(tx.selectClient) + '</option>';
+  clients.forEach(function(c) {
+    var opt = document.createElement("option");
+    opt.value       = c.id;
+    opt.textContent = c.name + " — " + c.phone;
+    sel.appendChild(opt);
+  });
+  if (val) sel.value = val;
+}
+
+/* ─────────────────────────────────────
+   INVOICE — GENERATE BON DE COMMANDE
+───────────────────────────────────── */
+function generateInvoice() {
+  var sel = $("client-select");
+  var id  = sel ? sel.value : "";
+  if (!id) {
+    toast(LANG === "ar" ? "⚠ يرجى اختيار عميل أولاً" : "⚠ Please select a client first");
+    return;
+  }
+  var c   = loadClients().filter(function(x){ return x.id === id; })[0];
+  if (!c) return;
+
+  var tx     = TX[LANG];
+  var rem    = Math.max(0, c.totalPrice - c.amountPaid);
+  var isPaid = rem === 0;
+  var pct    = c.totalPrice > 0 ? Math.min(100, (c.amountPaid / c.totalPrice) * 100) : 0;
+  var invNum = nextInvoiceNum();
+  var now    = new Date();
+  var dateStr = now.toLocaleDateString(LANG === "ar" ? "ar-MA" : "en-GB", {day:"2-digit", month:"long", year:"numeric"});
+
+  var phone = (c.phone || "").replace(/\s/g, "");
+  var waNum = phone.startsWith("+") ? phone.replace(/\D/g,"") : "212" + phone.replace(/^0/, "").replace(/\D/g,"");
+  var waLink = "https://wa.me/" + waNum;
+
+  var locRow = c.location
+    ? '<div class="inv-party-detail"><svg width="12" height="12" fill="none" stroke="#b8962c" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>' + esc(c.location) + '</div>'
+    : "";
+
+  var html =
+    '<div class="inv-top">'
+      + '<div class="inv-logo-area">'
+        + '<svg width="44" height="44" viewBox="0 0 36 36" fill="none"><polygon points="18,2 34,18 18,34 2,18" fill="none" stroke="#d4af37" stroke-width="1.5"/><polygon points="18,8 28,18 18,28 8,18" fill="none" stroke="#d4af37" stroke-width="1" opacity=".5"/><polygon points="18,13 23,18 18,23 13,18" fill="#d4af37"/><line x1="18" y1="2" x2="18" y2="8" stroke="#d4af37" stroke-width="1.5" stroke-linecap="round"/><line x1="2" y1="18" x2="8" y2="18" stroke="#d4af37" stroke-width="1.5" stroke-linecap="round"/><line x1="34" y1="18" x2="28" y2="18" stroke="#d4af37" stroke-width="1.5" stroke-linecap="round"/><line x1="18" y1="34" x2="18" y2="28" stroke="#d4af37" stroke-width="1.5" stroke-linecap="round"/></svg>'
+        + '<div><div class="inv-brand-name">Belrhazi Décor</div><div class="inv-brand-sub">بلغازي ديكور</div></div>'
+      + '</div>'
+      + '<div class="inv-doc-info">'
+        + '<div class="inv-doc-title">' + esc(tx.invBonDeCommande) + '</div>'
+        + '<div class="inv-doc-num">' + esc(tx.invNum) + ' BD-' + invNum + '</div>'
+        + '<div class="inv-doc-date">' + esc(tx.invDate) + ' ' + esc(dateStr) + '</div>'
+      + '</div>'
+    + '</div>'
+    + '<div class="inv-divider"></div>'
+    + '<div class="inv-body">'
+      + '<div class="inv-parties">'
+        + '<div class="inv-party-box">'
+          + '<div class="inv-party-title">' + esc(tx.invFrom) + '</div>'
+          + '<div class="inv-party-name">Belrhazi Décor</div>'
+          + '<div class="inv-party-detail"><svg width="12" height="12" fill="none" stroke="#b8962c" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>المغرب</div>'
+          + '<div class="inv-party-detail"><svg width="12" height="12" fill="#25d366" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.553 4.116 1.522 5.852L0 24l6.335-1.507A11.951 11.951 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.882a9.88 9.88 0 01-5.017-1.368l-.36-.214-3.732.888.939-3.636-.235-.374A9.882 9.882 0 012.118 12C2.118 6.555 6.555 2.118 12 2.118S21.882 6.555 21.882 12 17.445 21.882 12 21.882z"/></svg>belrhaziDecor@wa.ma</div>'
+        + '</div>'
+        + '<div class="inv-party-box">'
+          + '<div class="inv-party-title">' + esc(tx.invTo) + '</div>'
+          + '<div class="inv-party-name">' + esc(c.name) + '</div>'
+          + '<div class="inv-party-detail"><svg width="12" height="12" fill="none" stroke="#b8962c" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg><a href="' + waLink + '" style="color:#b8962c;text-decoration:none" dir="ltr">' + esc(c.phone) + '</a></div>'
+          + locRow
+        + '</div>'
+      + '</div>'
+
+      + '<table class="inv-table">'
+        + '<thead><tr>'
+          + '<th style="text-align:right">' + esc(tx.invSrv) + '</th>'
+          + '<th class="text-center" style="width:60px">' + esc(tx.invQty) + '</th>'
+          + '<th class="text-center" style="width:80px">' + esc(tx.invUnit) + '</th>'
+          + '<th class="text-left" style="width:140px">' + esc(tx.invPrice) + '</th>'
+        + '</tr></thead>'
+        + '<tbody><tr>'
+          + '<td>' + esc(c.serviceDetails) + '</td>'
+          + '<td class="text-center">1</td>'
+          + '<td class="text-center">' + (LANG === "ar" ? "درهم" : "MAD") + '</td>'
+          + '<td class="text-left" style="font-family:\'Cormorant Garamond\',serif;font-weight:700">' + esc(c.totalPrice.toFixed(2)) + '</td>'
+        + '</tr></tbody>'
+      + '</table>'
+
+      + '<div class="inv-totals">'
+        + '<div class="inv-totals-box">'
+          + '<div class="inv-total-row">'
+            + '<span class="inv-total-lbl">' + esc(tx.invTotal) + '</span>'
+            + '<span class="inv-total-val">' + esc(c.totalPrice.toFixed(2)) + ' ' + (LANG === "ar" ? "درهم" : "MAD") + '</span>'
+          + '</div>'
+          + '<div class="inv-total-row paid-row">'
+            + '<span class="inv-total-lbl">' + esc(tx.invPaid) + '</span>'
+            + '<span class="inv-total-val">' + esc(c.amountPaid.toFixed(2)) + ' ' + (LANG === "ar" ? "درهم" : "MAD") + '</span>'
+          + '</div>'
+          + '<div class="inv-total-row rem-row grand' + (isPaid ? ' all-paid' : '') + '">'
+            + '<span class="inv-total-lbl">' + esc(tx.invRem) + '</span>'
+            + '<span class="inv-total-val">' + esc(rem.toFixed(2)) + ' ' + (LANG === "ar" ? "درهم" : "MAD") + '</span>'
+          + '</div>'
+        + '</div>'
+      + '</div>'
+
+      + '<div class="inv-status-bar' + (isPaid ? ' paid' : '') + '">'
+        + '<div>'
+          + '<div class="inv-status-lbl">' + esc(tx.invPaymentStatus) + '</div>'
+          + '<div class="inv-progress-wrap" style="margin-top:8px;margin-bottom:0">'
+            + '<div class="inv-progress-lbl"><span>' + esc(tx.invProgLbl) + '</span><span>' + Math.round(pct) + '%</span></div>'
+            + '<div class="inv-progress-bar"><div class="inv-progress-fill" style="width:' + pct + '%;background:' + (isPaid ? 'linear-gradient(90deg,#10b981,#059669)' : 'linear-gradient(90deg,#d4af37,#b8962c)') + '"></div></div>'
+          + '</div>'
+        + '</div>'
+        + '<div class="inv-status-badge">' + esc(isPaid ? tx.invStatusPaid : tx.invStatusPending) + '</div>'
+      + '</div>'
+
+      + '<div class="inv-notes">'
+        + '<div class="inv-notes-title">' + esc(tx.invNotes) + '</div>'
+        + '<div class="inv-notes-text">' + esc(tx.invDefaultNote) + '</div>'
+      + '</div>'
+    + '</div>'
+
+    + '<div class="inv-footer-bar">'
+      + '<div class="inv-footer-txt">' + esc(tx.invFooterNote) + '</div>'
+      + '<div class="inv-footer-brand">Belrhazi Décor</div>'
+    + '</div>';
+
+  CURRENT_INVOICE_WA_NUM = waNum;
+
+  var doc = $("invoice-document");
+  doc.innerHTML = html;
+  doc.classList.remove("hidden");
+  $("invoice-placeholder").classList.add("hidden");
+  $("btn-export-img").classList.remove("hidden");
+  $("btn-send-wa").classList.remove("hidden");
+}
+
+/* ─────────────────────────────────────
+   IMAGE PREVIEW OVERLAY
+───────────────────────────────────── */
+var IMG_PREVIEW_BLOB_URL = "";
+var IMG_PREVIEW_FILENAME = "";
+
+function showImagePreview(canvas, filename, waUrl) {
+  IMG_PREVIEW_FILENAME = filename;
+
+  /* Everything inside toBlob so the img src is a real blob:// URL.
+     Blob URLs trigger "Save to Photos" on iOS/Android when long-pressed.
+     Data URLs do NOT — that was the root cause of the old failure. */
+  canvas.toBlob(function(blob) {
+    if (!blob) {
+      toast(LANG === "ar" ? "⚠ خطأ في معالجة الصورة" : "⚠ Image processing error");
+      return;
+    }
+
+    /* revoke previous URL to avoid memory leak */
+    if (IMG_PREVIEW_BLOB_URL) {
+      URL.revokeObjectURL(IMG_PREVIEW_BLOB_URL);
+    }
+    IMG_PREVIEW_BLOB_URL = URL.createObjectURL(blob);
+
+    /* set img src to blob URL — this is what enables long-press save */
+    var img = $("img-preview-img");
+    img.src = IMG_PREVIEW_BLOB_URL;
+
+    var isAr = LANG === "ar";
+
+    /* hint text */
+    setText("img-hint-main", isAr
+      ? "📱 اضغط مطولاً على الصورة ← ثم اختر «حفظ الصورة»"
+      : "📱 Long-press the image → then tap \"Save Image\"");
+    setText("img-hint-sub", isAr
+      ? "تُحفظ مباشرة في معرض هاتفك — بدون أي إذن"
+      : "Saved directly to your gallery — no permission needed");
+
+    /* download button label */
+    setText("img-preview-dl-btn", isAr ? "⬇ تحميل مباشر" : "⬇ Direct Download");
+
+    /* whatsapp button */
+    var waBtn = $("img-preview-wa-btn");
+    if (waUrl && waBtn) {
+      waBtn.classList.remove("hidden");
+      waBtn.onclick = function() {
+        closeImgPreview();
+        window.open(waUrl, "_blank", "noopener,noreferrer");
+      };
+      waBtn.innerHTML =
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="display:inline;vertical-align:middle;margin-left:4px"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.553 4.116 1.522 5.852L0 24l6.335-1.507A11.951 11.951 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.882a9.88 9.88 0 01-5.017-1.368l-.36-.214-3.732.888.939-3.636-.235-.374A9.882 9.882 0 012.118 12C2.118 6.555 6.555 2.118 12 2.118S21.882 6.555 21.882 12 17.445 21.882 12 21.882z"/></svg> '
+        + (isAr ? "فتح واتساب ←" : "Open WhatsApp →");
+    } else if (waBtn) {
+      waBtn.classList.add("hidden");
+    }
+
+    /* open overlay */
+    $("img-preview-ov").classList.add("open");
+    document.body.style.overflow = "hidden";
+  }, "image/png");
+}
+
+function closeImgPreview() {
+  $("img-preview-ov").classList.remove("open");
+  document.body.style.overflow = "";
+}
+
+function imgPreviewDownload() {
+  if (!IMG_PREVIEW_BLOB_URL) return;
+  var link = document.createElement("a");
+  link.href     = IMG_PREVIEW_BLOB_URL;
+  link.download = IMG_PREVIEW_FILENAME;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+/* ─────────────────────────────────────
+   INVOICE — EXPORT AS IMAGE
+───────────────────────────────────── */
+function exportInvoiceAsImage() {
+  var doc = $("invoice-document");
+  if (!doc || doc.classList.contains("hidden")) {
+    toast(LANG === "ar" ? "⚠ ولّد الفاتورة أولاً" : "⚠ Generate the invoice first");
+    return;
+  }
+  if (typeof html2canvas === "undefined") {
+    toast(LANG === "ar" ? "⚠ مكتبة التصدير غير متاحة" : "⚠ Export library not available");
+    return;
+  }
+
+  var btn = $("btn-export-img");
+  if (btn) { btn.disabled = true; btn.style.opacity = ".6"; }
+
+  html2canvas(doc, {
+    scale: 2,
+    useCORS: true,
+    backgroundColor: "#ffffff",
+    logging: false
+  }).then(function(canvas) {
+    var filename = "belrhazi-invoice-" + new Date().toISOString().slice(0,10) + ".png";
+    showImagePreview(canvas, filename, null);
+  }).catch(function() {
+    toast(LANG === "ar" ? "⚠ حدث خطأ في التصدير" : "⚠ Export error occurred");
+  }).finally(function() {
+    if (btn) { btn.disabled = false; btn.style.opacity = "1"; }
+  });
+}
+
+/* ─────────────────────────────────────
+   INVOICE — SEND TO WHATSAPP
+───────────────────────────────────── */
+function sendInvoiceToWhatsApp() {
+  var doc = $("invoice-document");
+  if (!doc || doc.classList.contains("hidden")) {
+    toast(LANG === "ar" ? "⚠ ولّد الفاتورة أولاً" : "⚠ Generate the invoice first");
+    return;
+  }
+  if (typeof html2canvas === "undefined") {
+    toast(LANG === "ar" ? "⚠ مكتبة التصدير غير متاحة" : "⚠ Export library not available");
+    return;
+  }
+  if (!CURRENT_INVOICE_WA_NUM) {
+    toast(LANG === "ar" ? "⚠ رقم الواتساب غير متوفر" : "⚠ WhatsApp number not available");
+    return;
+  }
+
+  var btn = $("btn-send-wa");
+  if (btn) { btn.disabled = true; btn.style.opacity = ".6"; }
+
+  var waUrl = "https://wa.me/" + CURRENT_INVOICE_WA_NUM;
+
+  html2canvas(doc, {
+    scale: 2,
+    useCORS: true,
+    backgroundColor: "#ffffff",
+    logging: false
+  }).then(function(canvas) {
+    var filename = "belrhazi-invoice-" + new Date().toISOString().slice(0,10) + ".png";
+    showImagePreview(canvas, filename, waUrl);
+  }).catch(function() {
+    toast(LANG === "ar" ? "⚠ حدث خطأ في التصدير" : "⚠ Export error occurred");
+  }).finally(function() {
+    if (btn) { btn.disabled = false; btn.style.opacity = "1"; }
+  });
+}
+
+/* ─────────────────────────────────────
+   INIT
+───────────────────────────────────── */
+document.addEventListener("DOMContentLoaded", function() {
+
+  /* Language */
+  $("lang-sel").addEventListener("change", function() { setLang(this.value); });
+
+  /* Order form */
+  $("btn-cancel").addEventListener("click", function() { switchPage("clients"); resetOrderForm(); });
+  $("btn-submit").addEventListener("click", submitForm);
+  $("btn-gps").addEventListener("click", startGPS);
+  $("f-total").addEventListener("input", calcRem);
+  $("f-paid").addEventListener("input",  calcRem);
+  ["name","phone","service","total","paid"].forEach(function(f) {
+    var el = $("f-"+f);
+    if (el) el.addEventListener("input", function(){ clearErr(f); });
+  });
+
+  /* Search */
+  $("search").addEventListener("input", renderClients);
+
+  /* Export / Import */
+  $("btn-export").addEventListener("click", exportData);
+  $("file-import").addEventListener("change", function(){ importData(this.files[0]); this.value=""; });
+
+  /* Delete modal */
+  $("del-cancel").addEventListener("click", closeDel);
+  $("del-confirm").addEventListener("click", confirmDel);
+  $("del-ov").addEventListener("click", function(e){ if(e.target===this) closeDel(); });
+
+  /* Invoice */
+  $("btn-gen-invoice").addEventListener("click", generateInvoice);
+  $("btn-export-img").addEventListener("click", exportInvoiceAsImage);
+  $("btn-send-wa").addEventListener("click", sendInvoiceToWhatsApp);
+  $("client-select").addEventListener("change", function() {
+    $("invoice-document").classList.add("hidden");
+    $("invoice-placeholder").classList.remove("hidden");
+    $("btn-export-img").classList.add("hidden");
+    $("btn-send-wa").classList.add("hidden");
+    CURRENT_INVOICE_WA_NUM = "";
+  });
+  $("img-preview-ov").addEventListener("click", function(e){ if(e.target===this) closeImgPreview(); });
+
+  /* Network status */
+  window.addEventListener("online",  function(){ setNetStatus(true); });
+  window.addEventListener("offline", function(){ setNetStatus(false); });
+  setNetStatus(navigator.onLine);
+
+  /* Init */
+  applyTX();
+  renderStats();
+  renderClients();
+  populateClientSelect();
+});
+</script>
+<script src="https://replit-cdn.com/replit-pill/replit-pill.global.js" data-repl-id="40d90bd4-cd41-44ca-9f73-ae7f81229ac3"></script></body>
+</html>
