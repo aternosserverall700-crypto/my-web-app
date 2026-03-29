@@ -7,29 +7,20 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
-      - name: Setup Java
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'zulu'
-          java-version: '17'
-
-      - name: Build Android App
+      - name: Install Capacitor
         run: |
-          # 1. تنظيف وتجهيز البيئة
-          npm init -y
-          npm install @capacitor/core @capacitor/cli @capacitor/android
-          
-          # 2. كري ملفات Capacitor و Android من الزيرو
+          npm install --save @capacitor/core @capacitor/cli @capacitor/android
           npx cap init "Belrhazi" "com.belrhazi.app" --web-dir . || true
+
+      - name: Build Android
+        run: |
           npx cap add android || true
           npx cap copy
-          
-          # 3. بناء الـ APK
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
