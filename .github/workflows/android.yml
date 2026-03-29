@@ -1,33 +1,31 @@
-name: Build Android APK
-on:
-  push:
-    branches: [ main ]
+name: Build APK
+on: [push]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Set up Node.js
+      - name: Setup Node
         uses: actions/setup-node@v3
         with:
           node-version: 18
 
-      - name: Set up Java
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'zulu'
-          java-version: '17'
-
-      - name: Build Process
+      - name: Build Android
         run: |
+          # تجهيز البيئة
           npm init -y
           npm install @capacitor/core @capacitor/cli @capacitor/android
-          npx cap init "Belrhazi App" "com.belrhazi.app" --web-dir . || true
+          
+          # تهيئة Capacitor (إيلا ماكانش)
+          npx cap init "Belrhazi" "com.belrhazi.app" --web-dir . || true
+          
+          # إضافة منصة أندرويد وبناء الملف
           npx cap add android || true
           npx cap copy
+          
+          # الدخول لمجلد أندرويد وبناء الـ APK
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
@@ -35,5 +33,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v3
         with:
-          name: Belrhazi-App-APK
+          name: Belrhazi-Final-App
           path: android/app/build/outputs/apk/debug/app-debug.apk
