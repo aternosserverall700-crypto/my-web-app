@@ -1,7 +1,31 @@
-      - name: Install Dependencies
+name: Mobile APK Build
+on: [push, workflow_dispatch]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4 # تحديث لـ v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4 # تحديث لـ v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Build APK
         run: |
           npm init -y
           npm install @capacitor/core @capacitor/cli @capacitor/android
-          mkdir -p www # هادي هي اللي كتحل بزاف ديال المشاكل
+          mkdir -p www
           echo '{"appId":"com.belrhazi.app","appName":"Belrhazi","webDir":"www","bundledWebRuntime":false}' > capacitor.config.json
           cp index.html www/ || true
+          npx cap add android || true
+          npx cap sync
+          cd android && chmod +x gradlew && ./gradlew assembleDebug
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4 # التحديث الأهم لـ v4
+        with:
+          name: Belrhazi-Final-App
+          path: android/app/build/outputs/apk/debug/app-debug.apk
