@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>بلغازي ديكور — إدارة العملاء</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        gold: {
+          DEFAULT: '#d4af37',
+          light:   '#e8cc6a',
+          dark:    '#b8962c',
+          bg:      '#fffdf4',
+          muted:   'rgba(212,175,55,0.15)',
+        }
+      },
+      fontFamily: {
+        arabic: ['Amiri', 'serif'],
+        display: ['"Cormorant Garamond"', 'serif'],
+      }
+    }
+  }
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cormorant+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: 'Amiri', serif; background: #fafaf8; }
+  body.ltr { direction: ltr; text-align: left; }
+  body.rtl { direction: rtl; text-align: right; }
+
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-thumb { background: #d4af37; border-radius: 4px; }
+
+  @keyframes fadeIn  { from { opacity: 0; }             to { opacity: 1; } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes spin    { to   { transform: rotate(360deg); } }
+
+  .anim-fadein  { animation: fadeIn  0.2s ease; }
+  .anim-slideup { animation: slideUp 0.3s cubic-bezier(0.16,1,0.3,1); }
+  .spin-icon    { animation: spin 0.9s linear infinite; display: inline-block; }
+
+  .gold-gradient { background: linear-gradient(135deg, #d4af37 0%, #e8cc6a 50%, #b8962c 100%); }
+  .gold-text-gradient {
+    background: linear-gradient(135deg, #d4af37, #b8962c);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+  .overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.52);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  @media (min-width: 640px) {
+    .overlay { align-items: center; }
+  }
+  .overlay.open { display: flex; }
+
+  .modal-panel {
+    background: #fff;
+    width: 100%;
+    max-width: 520px;
+    border-radius: 24px 24px 0 0;
+    max-height: 92vh;
+    overflow-y: auto;
+  }
+  @media (min-width: 640px) {
+    .modal-panel { border-radius: 20px; }
+  }
+
+  .delete-panel {
+    background: #fff;
+    width: 100%;
+    max-width: 360px;
+    border-radius: 20px;
+    padding: 32px 28px;
+    text-align: center;
+    margin: 16px;
+  }
+
+  .form-input {
+    width: 100%;
+    background: #fff;
+    border: 1px solid #e8e0c8;
+    border-radius: 10px;
+    padding: 11px 14px;
+    font-size: 14px;
+    font-family: 'Amiri', serif;
+    color: #111;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .form-input::placeholder { color: #bbb; }
+  .form-input:focus { border-color: #d4af37; box-shadow: 0 0 0 3px rgba(212,175,55,0.15); }
+  .form-input.err { border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.1); }
+
+  .badge-paid   { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
+  .badge-owed   { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
+
+  .progress-bar {
+    width: 100%; height: 5px;
+    background: #f0ede5; border-radius: 99px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; border-radius: 99px;
+    transition: width 0.5s ease;
+  }
+
+  .client-card {
+    background: #fff;
+    border: 1px solid #e8e0c8;
+    border-radius: 16px;
+    padding: 18px 20px;
+    transition: box-shadow 0.2s, border-color 0.2s;
+  }
+  .client-card:hover {
+    box-shadow: 0 4px 20px rgba(212,175,55,0.14);
+    border-color: rgba(212,175,55,0.4);
+  }
+
+  .toast-box {
+    display: none;
+    position: fixed; top: 20px; left: 24px;
+    z-index: 9999; pointer-events: none;
+    background: #fff;
+    border: 1px solid rgba(212,175,55,0.3);
+    border-radius: 12px;
+    padding: 11px 20px;
+    font-size: 14px; font-weight: 500; color: #111;
+    box-shadow: 0 4px 20px rgba(212,175,55,0.2);
+    align-items: center; gap: 8px;
+    max-width: 300px;
+  }
+  body.ltr .toast-box { left: auto; right: 24px; }
+  .toast-box.show { display: flex; animation: fadeIn 0.25s ease; }
+</style>
+</head>
+<body class="rtl min-h-screen">
+
+<!-- ░░ TOAST ░░ -->
+<div id="toast" class="toast-box">
+  <svg width="16" height="16" fill="none" stroke="#d4af37" stroke-width="2.5" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+  </svg>
+  <span id="toast-text"></span>
+</div>
+
+<!-- ░░ HEADER ░░ -->
+<header class="bg-white border-b border-[#e8e0c8] sticky top-0 z-50" style="box-shadow:0 1px 8px rgba(212,175,55,0.08)">
+  <div class="max-w-4xl mx-auto px-5 py-3 flex items-center justify-between gap-4">
+
+    <!-- Brand -->
+    <div class="flex items-center gap-3">
+      <!-- Logo diamond -->
+      <svg width="34" height="34" viewBox="0 0 36 36" fill="none" class="flex-shrink-0">
+        <polygon points="18,2 34,18 18,34 2,18" fill="none" stroke="#d4af37" stroke-width="1.5"/>
+        <polygon points="18,8 28,18 18,28 8,18" fill="none" stroke="#d4af37" stroke-width="1" opacity="0.55"/>
+        <polygon points="18,13 23,18 18,23 13,18" fill="#d4af37" opacity="0.95"/>
+        <line x1="18" y1="2" x2="18" y2="8"   stroke="#d4af37" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="2"  y1="18" x2="8"  y2="18"  stroke="#d4af37" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="34" y1="18" x2="28" y2="18"  stroke="#d4af37" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="18" y1="34" x2="18" y2="28"  stroke="#d4af37" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <div>
+        <h1 id="brand-name" class="font-display font-semibold text-[17px] text-gray-900 leading-tight tracking-wide">بلغازي ديكور</h1>
+        <p id="brand-sub" class="text-[9px] tracking-[0.2em] uppercase text-gold mt-0.5">إدارة العملاء</p>
+      </div>
+    </div>
+
+    <!-- Language Switcher -->
+    <div class="relative">
+      <select id="lang-select"
+        class="appearance-none bg-white border border-[#e8e0c8] text-gray-800 text-[13px] font-arabic rounded-xl
+               px-4 py-2 pr-8 cursor-pointer outline-none hover:border-gold focus:border-gold transition-colors">
+        <option value="ar" selected>العربية</option>
+        <option value="en">English</option>
+      </select>
+      <svg class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-gold" width="14" height="14"
+           fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+      </svg>
+    </div>
+  </div>
+</header>
+
+<!-- ░░ MAIN ░░ -->
+<main class="max-w-4xl mx-auto px-5 py-7">
+
+  <!-- Stats row -->
+  <div class="grid grid-cols-2 gap-4 mb-6" id="stats-grid">
+    <!-- Total Clients -->
+    <div class="bg-white border border-[#e8e0c8] rounded-2xl p-5 flex items-center gap-4"
+         style="box-shadow:0 2px 12px rgba(0,0,0,0.04)">
+      <div class="w-11 h-11 rounded-[14px] flex items-center justify-center flex-shrink-0"
+           style="background:rgba(212,175,55,0.12)">
+        <svg width="22" height="22" fill="none" stroke="#d4af37" stroke-width="1.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857
+               M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857
+               m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+      </div>
+      <div>
+        <div id="stat-clients-lbl" class="text-[10px] uppercase tracking-widest text-gray-400 font-semibold mb-1">العملاء الإجمالي</div>
+        <div id="stat-clients-val" class="font-display text-3xl font-bold text-gray-900 leading-none">0</div>
+      </div>
+    </div>
+
+    <!-- Outstanding balance — gold card -->
+    <div class="gold-gradient rounded-2xl p-5 flex items-center gap-4 relative overflow-hidden"
+         style="box-shadow:0 4px 20px rgba(212,175,55,0.32)">
+      <div class="absolute inset-0 pointer-events-none"
+           style="background:radial-gradient(circle at 80% 10%, rgba(255,255,255,0.28) 0%, transparent 60%)"></div>
+      <div class="w-11 h-11 rounded-[14px] flex items-center justify-center flex-shrink-0 bg-white/20">
+        <svg width="22" height="22" fill="none" stroke="white" stroke-width="1.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2
+               m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1
+               m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      </div>
+      <div class="relative z-10">
+        <div id="stat-balance-lbl" class="text-[10px] uppercase tracking-widest text-white/80 font-semibold mb-1">إجمالي الرصيد المتبقي</div>
+        <div id="stat-balance-val" class="font-display text-[22px] font-bold text-white leading-none">0.00 درهم</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toolbar: search + add -->
+  <div class="flex gap-3 mb-5 flex-wrap">
+    <div class="relative flex-1 min-w-[180px]">
+      <svg class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-300 pointer-events-none body-ltr-swap"
+           width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+      </svg>
+      <input id="search-input" type="text"
+        class="form-input pr-10"
+        placeholder="بحث عن عميل..." />
+    </div>
+    <button id="btn-add"
+      class="gold-gradient text-white font-semibold text-[14px] px-5 py-2.5 rounded-xl flex items-center gap-2
+             transition-all hover:opacity-90 active:scale-95"
+      style="box-shadow:0 4px 16px rgba(212,175,55,0.38)">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+      </svg>
+      <span id="btn-add-lbl">إضافة عميل</span>
+    </button>
+  </div>
+
+  <!-- Client list -->
+  <div id="client-list"></div>
+</main>
+
+<!-- ░░ ADD / EDIT OVERLAY ░░ -->
+<div id="form-overlay" class="overlay anim-fadein">
+  <div class="modal-panel anim-slideup">
+    <!-- Modal header -->
+    <div class="flex items-center justify-between px-6 py-4 border-b border-[#e8e0c8] sticky top-0 bg-white rounded-t-3xl sm:rounded-t-2xl z-10">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 gold-gradient rounded-[10px] flex items-center justify-center flex-shrink-0">
+          <svg id="modal-icon" width="15" height="15" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+          </svg>
+        </div>
+        <div>
+          <div id="modal-title" class="text-[15px] font-bold text-gray-900">إضافة عميل جديد</div>
+          <div id="modal-sub" class="text-[11px] text-gray-400 mt-0.5">أملأ بيانات العميل أدناه</div>
+        </div>
+      </div>
+      <button id="btn-close-form"
+        class="w-8 h-8 rounded-full flex items-center justify-center text-gray-400
+               hover:bg-gray-100 hover:text-gray-600 transition-colors">
+        <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Modal body -->
+    <div class="px-6 pb-7 pt-5 space-y-4">
+      <input type="hidden" id="edit-id" />
+
+      <!-- Name -->
+      <div>
+        <label id="lbl-name" class="block text-[11px] uppercase tracking-[0.12em] font-bold text-gray-500 mb-1.5">اسم العميل</label>
+        <input id="f-name" type="text" class="form-input" placeholder="أدخل اسم العميل" />
+        <p id="err-name" class="text-red-500 text-xs mt-1 hidden"></p>
+      </div>
+
+      <!-- Phone -->
+      <div>
+        <label id="lbl-phone" class="block text-[11px] uppercase tracking-[0.12em] font-bold text-gray-500 mb-1.5">رقم الهاتف</label>
+        <input id="f-phone" type="tel" class="form-input" placeholder="أدخل رقم الهاتف" dir="ltr" />
+        <p id="err-phone" class="text-red-500 text-xs mt-1 hidden"></p>
+      </div>
+
+      <!-- Service -->
+      <div>
+        <label id="lbl-service" class="block text-[11px] uppercase tracking-[0.12em] font-bold text-gray-500 mb-1.5">تفاصيل الخدمة</label>
+        <textarea id="f-service" class="form-input" rows="3" placeholder="صف الخدمة المقدمة..."></textarea>
+        <p id="err-service" class="text-red-500 text-xs mt-1 hidden"></p>
+      </div>
+
+      <!-- Location -->
+      <div>
+        <label id="lbl-location" class="block text-[11px] uppercase tracking-[0.12em] font-bold text-gray-500 mb-1.5">الموقع (اختياري)</label>
+        <div class="flex gap-2">
+          <input id="f-location" type="text" class="form-input flex-1" placeholder="أدخل العنوان يدوياً" />
+          <button id="btn-gps"
+            class="w-12 h-11 flex-shrink-0 border-2 border-gold text-gold rounded-xl flex items-center justify-center
+                   hover:bg-gold hover:text-white transition-colors disabled:opacity-50" type="button">
+            <svg id="gps-svg" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+          </button>
+        </div>
+        <p id="gps-msg" class="text-xs mt-1 hidden"></p>
+      </div>
+
+      <!-- Prices (2 columns) -->
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label id="lbl-total" class="block text-[11px] uppercase tracking-[0.12em] font-bold text-gray-500 mb-1.5">السعر الإجمالي (درهم)</label>
+          <input id="f-total" type="number" class="form-input" placeholder="0.00" min="0" step="0.01" dir="ltr" />
+          <p id="err-total" class="text-red-500 text-xs mt-1 hidden"></p>
+        </div>
+        <div>
+          <label id="lbl-paid" class="block text-[11px] uppercase tracking-[0.12em] font-bold text-gray-500 mb-1.5">المبلغ المدفوع (درهم)</label>
+          <input id="f-paid" type="number" class="form-input" placeholder="0.00" min="0" step="0.01" dir="ltr" />
+          <p id="err-paid" class="text-red-500 text-xs mt-1 hidden"></p>
+        </div>
+      </div>
+
+      <!-- Auto-calculated remaining -->
+      <div id="remaining-box"
+        class="flex items-center justify-between rounded-xl px-4 py-3 border-2"
+        style="background:#fffdf4; border-color:rgba(212,175,55,0.3)">
+        <span id="lbl-remaining" class="text-sm font-semibold text-gray-600">الرصيد المتبقي:</span>
+        <span id="remaining-val" class="font-display text-[20px] font-bold" style="color:#d4af37">0.00 درهم</span>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex gap-3 pt-1">
+        <button id="btn-cancel"
+          class="flex-1 py-3 rounded-xl border border-[#e8e0c8] text-gray-600 font-semibold text-[14px]
+                 hover:bg-gray-50 transition-colors">
+          إلغاء
+        </button>
+        <button id="btn-submit"
+          class="flex-[2] py-3 rounded-xl gold-gradient text-white font-bold text-[14px]
+                 hover:opacity-90 active:scale-95 transition-all"
+          style="box-shadow:0 4px 16px rgba(212,175,55,0.38)">
+          إنشاء عميل
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ░░ DELETE OVERLAY ░░ -->
+<div id="delete-overlay" class="overlay anim-fadein">
+  <div class="delete-panel anim-slideup">
+    <div class="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-4">
+      <svg width="26" height="26" fill="none" stroke="#ef4444" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7
+             m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+      </svg>
+    </div>
+    <h3 id="del-title" class="text-lg font-bold text-gray-900 mb-2">تأكيد الحذف</h3>
+    <p id="del-desc" class="text-sm text-gray-500 mb-1">هل أنت متأكد من حذف هذا العميل؟</p>
+    <p id="del-name" class="font-bold text-gray-800 mb-6"></p>
+    <div class="flex gap-3">
+      <button id="del-cancel"
+        class="flex-1 py-2.5 rounded-xl border border-[#e8e0c8] text-gray-600 font-semibold text-sm
+               hover:bg-gray-50 transition-colors">
+        إلغاء
+      </button>
+      <button id="del-confirm"
+        class="flex-1 py-2.5 rounded-xl bg-red-500 text-white font-bold text-sm
+               hover:bg-red-600 active:scale-95 transition-all">
+        نعم، احذف
+      </button>
+    </div>
+  </div>
+</div>
+
+<footer class="text-center py-5 text-xs text-gray-400 font-display">
+  © 2025 Belrhazi Décor &nbsp;·&nbsp; بلغازي ديكور
+</footer>
+
+<!-- ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ -->
+<!--  JAVASCRIPT                              -->
+<!-- ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ -->
+<script>
+"use strict";
+
+/* ─── TRANSLATIONS ─── */
+var TX = {
+  ar: {
+    brandName:      "بلغازي ديكور",
+    brandSub:       "إدارة العملاء",
+    statClients:    "العملاء الإجمالي",
+    statBalance:    "إجمالي الرصيد المتبقي",
+    searchPH:       "بحث عن عميل...",
+    btnAdd:         "إضافة عميل",
+    addFirstBtn:    "إضافة أول عميل",
+    noClients:      "لا يوجد عملاء بعد",
+    noClientsDesc:  "ابدأ بإضافة أول عميل لك",
+    modalAddTitle:  "إضافة عميل جديد",
+    modalEditTitle: "تعديل بيانات العميل",
+    modalSub:       "أملأ بيانات العميل أدناه",
+    lblName:        "اسم العميل",
+    lblPhone:       "رقم الهاتف",
+    lblService:     "تفاصيل الخدمة",
+    lblLocation:    "الموقع (اختياري)",
+    lblTotal:       "السعر الإجمالي (درهم)",
+    lblPaid:        "المبلغ المدفوع (درهم)",
+    lblRemaining:   "الرصيد المتبقي:",
+    phName:         "أدخل اسم العميل",
+    phPhone:        "أدخل رقم الهاتف",
+    phService:      "صف الخدمة المقدمة...",
+    phLocation:     "أدخل العنوان يدوياً",
+    btnCancel:      "إلغاء",
+    btnCreate:      "إنشاء عميل",
+    btnUpdate:      "حفظ التعديلات",
+    errName:        "اسم العميل مطلوب",
+    errPhone:       "رقم الهاتف مطلوب",
+    errService:     "تفاصيل الخدمة مطلوبة",
+    errTotal:       "السعر الإجمالي مطلوب",
+    errPaid:        "المبلغ المدفوع مطلوب",
+    gpsLoading:     "جاري تحديد الموقع...",
+    gpsError:       "تعذر تحديد الموقع. أدخله يدوياً.",
+    delTitle:       "تأكيد الحذف",
+    delDesc:        "هل أنت متأكد من حذف هذا العميل؟ لا يمكن التراجع.",
+    delCancel:      "إلغاء",
+    delConfirm:     "نعم، احذف",
+    badgePaid:      "مكتمل",
+    badgeOwed:      "متبقي",
+    colTotal:       "الإجمالي",
+    colPaid:        "المدفوع",
+    colRem:         "المتبقي",
+    btnEdit:        "تعديل",
+    btnDelete:      "حذف",
+    toastAdded:     "تم إضافة العميل بنجاح ✓",
+    toastUpdated:   "تم تحديث العميل بنجاح ✓",
+    toastDeleted:   "تم حذف العميل بنجاح ✓",
+    fmtAmt: function(v) { return v + " درهم"; },
+    fmtShort: function(v) { return v + " د"; }
+  },
+  en: {
+    brandName:      "Belrhazi Décor",
+    brandSub:       "Client Management",
+    statClients:    "Total Clients",
+    statBalance:    "Total Outstanding Balance",
+    searchPH:       "Search clients...",
+    btnAdd:         "+ Add Client",
+    addFirstBtn:    "Add First Client",
+    noClients:      "No clients yet",
+    noClientsDesc:  "Start by adding your first client",
+    modalAddTitle:  "New Client",
+    modalEditTitle: "Edit Client",
+    modalSub:       "Fill in the client details below",
+    lblName:        "Client Name",
+    lblPhone:       "Phone Number",
+    lblService:     "Service Details",
+    lblLocation:    "Location (Optional)",
+    lblTotal:       "Total Price (MAD)",
+    lblPaid:        "Amount Paid (MAD)",
+    lblRemaining:   "Remaining Balance:",
+    phName:         "Enter client name",
+    phPhone:        "Enter phone number",
+    phService:      "Describe the service provided...",
+    phLocation:     "Enter address manually",
+    btnCancel:      "Cancel",
+    btnCreate:      "Create Client",
+    btnUpdate:      "Save Changes",
+    errName:        "Client name is required",
+    errPhone:       "Phone number is required",
+    errService:     "Service details are required",
+    errTotal:       "Total price is required",
+    errPaid:        "Amount paid is required",
+    gpsLoading:     "Locating...",
+    gpsError:       "Could not get location. Enter manually.",
+    delTitle:       "Confirm Delete",
+    delDesc:        "Are you sure? This action cannot be undone.",
+    delCancel:      "Cancel",
+    delConfirm:     "Yes, Delete",
+    badgePaid:      "Paid",
+    badgeOwed:      "Outstanding",
+    colTotal:       "Total",
+    colPaid:        "Paid",
+    colRem:         "Remaining",
+    btnEdit:        "Edit",
+    btnDelete:      "Delete",
+    toastAdded:     "Client added successfully ✓",
+    toastUpdated:   "Client updated successfully ✓",
+    toastDeleted:   "Client deleted successfully ✓",
+    fmtAmt: function(v) { return "MAD " + v; },
+    fmtShort: function(v) { return "MAD " + v; }
+  }
+};
+
+/* ─── STATE ─── */
+var LANG = "ar";
+var DELETE_ID = null;
+var toastTimer = null;
+var STORE_KEY = "belrhazi_v2";
+
+/* ─── STORAGE ─── */
+function loadClients() {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY) || "[]"); }
+  catch(e) { return []; }
+}
+function saveClients(list) {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(list)); } catch(e) {}
+}
+function uid() {
+  return (typeof crypto !== "undefined" && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : "c" + Date.now() + Math.random().toString(36).slice(2);
+}
+
+/* ─── DOM SHORTHAND ─── */
+function $(id) { return document.getElementById(id); }
+function setText(id, v)           { var e = $(id); if (e) e.textContent = v; }
+function setPlaceholder(id, v)    { var e = $(id); if (e) e.placeholder = v; }
+function showEl(id, show) {
+  var e = $(id);
+  if (!e) return;
+  if (show) e.classList.remove("hidden");
+  else      e.classList.add("hidden");
+}
+
+/* ─── LANGUAGE ─── */
+function setLang(l) {
+  LANG = l;
+  document.documentElement.lang = l;
+  document.body.className = l === "ar" ? "rtl min-h-screen" : "ltr min-h-screen";
+  applyTranslations();
+  renderStats();
+  renderClients();
+}
+
+function tr(k) { return TX[LANG][k] || k; }
+
+function applyTranslations() {
+  var t = TX[LANG];
+  setText("brand-name",       t.brandName);
+  setText("brand-sub",        t.brandSub);
+  setText("stat-clients-lbl", t.statClients);
+  setText("stat-balance-lbl", t.statBalance);
+  setPlaceholder("search-input", t.searchPH);
+  setText("btn-add-lbl",      t.btnAdd);
+  setText("modal-title",      t.modalAddTitle);
+  setText("modal-sub",        t.modalSub);
+  setText("lbl-name",         t.lblName);
+  setText("lbl-phone",        t.lblPhone);
+  setText("lbl-service",      t.lblService);
+  setText("lbl-location",     t.lblLocation);
+  setText("lbl-total",        t.lblTotal);
+  setText("lbl-paid",         t.lblPaid);
+  setText("lbl-remaining",    t.lblRemaining);
+  setPlaceholder("f-name",     t.phName);
+  setPlaceholder("f-phone",    t.phPhone);
+  setPlaceholder("f-service",  t.phService);
+  setPlaceholder("f-location", t.phLocation);
+  setText("btn-cancel", t.btnCancel);
+  setText("btn-submit", t.btnCreate);
+  setText("del-title",   t.delTitle);
+  setText("del-desc",    t.delDesc);
+  setText("del-cancel",  t.delCancel);
+  setText("del-confirm", t.delConfirm);
+  calcRemaining();
+}
+
+/* ─── STATS ─── */
+function renderStats() {
+  var clients = loadClients();
+  var outstanding = 0;
+  for (var i = 0; i < clients.length; i++) {
+    var r = clients[i].totalPrice - clients[i].amountPaid;
+    if (r > 0) outstanding += r;
+  }
+  setText("stat-clients-val", String(clients.length));
+  setText("stat-balance-val", TX[LANG].fmtAmt(outstanding.toFixed(2)));
+}
+
+/* ─── CLIENT LIST ─── */
+function renderClients() {
+  var t = TX[LANG];
+  var q = ($("search-input").value || "").toLowerCase().trim();
+  var all = loadClients();
+  var list = q
+    ? all.filter(function(c) {
+        return c.name.toLowerCase().indexOf(q) !== -1
+          || c.phone.indexOf(q) !== -1
+          || (c.serviceDetails || "").toLowerCase().indexOf(q) !== -1;
+      })
+    : all;
+
+  var container = $("client-list");
+
+  if (list.length === 0) {
+    var btn = all.length === 0
+      ? '<button id="btn-empty-add" class="mt-2 flex items-center gap-2 border-2 border-gold text-gold font-semibold px-5 py-2.5 rounded-xl hover:bg-gold hover:text-white transition-colors text-sm">' +
+          '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>' +
+          esc(t.addFirstBtn) + "</button>"
+      : "";
+    container.innerHTML =
+      '<div class="flex flex-col items-center text-center py-20">' +
+        '<div class="w-20 h-20 rounded-full flex items-center justify-center mb-5" style="background:rgba(212,175,55,0.1)">' +
+          '<svg width="38" height="38" fill="none" stroke="#d4af37" stroke-width="1.5" viewBox="0 0 24 24">' +
+            '<path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>' +
+          "</svg>" +
+        "</div>" +
+        '<p class="text-lg font-bold text-gray-800 mb-1">' + esc(t.noClients) + "</p>" +
+        '<p class="text-sm text-gray-400 mb-4">' + esc(t.noClientsDesc) + "</p>" +
+        btn +
+      "</div>";
+    var emptyBtn = $("btn-empty-add");
+    if (emptyBtn) emptyBtn.addEventListener("click", openAddModal);
+    return;
+  }
+
+  var html = '<div class="flex flex-col gap-3">';
+  for (var i = 0; i < list.length; i++) {
+    html += buildCard(list[i], t);
+  }
+  html += "</div>";
+  container.innerHTML = html;
+
+  /* Bind edit / delete buttons */
+  var editBtns = container.querySelectorAll("[data-edit]");
+  var delBtns  = container.querySelectorAll("[data-delete]");
+  for (var j = 0; j < editBtns.length; j++) {
+    editBtns[j].addEventListener("click", function() { openEditModal(this.getAttribute("data-edit")); });
+  }
+  for (var k = 0; k < delBtns.length; k++) {
+    delBtns[k].addEventListener("click", function() { openDeleteModal(this.getAttribute("data-delete")); });
+  }
+}
+
+function buildCard(c, t) {
+  var rem   = c.totalPrice - c.amountPaid;
+  if (rem < 0) rem = 0;
+  var isPaid = rem === 0;
+  var pct   = c.totalPrice > 0 ? Math.min(100, (c.amountPaid / c.totalPrice) * 100) : 0;
+  var fmt   = TX[LANG].fmtShort;
+
+  var dateStr = "";
+  try {
+    dateStr = new Date(c.createdAt).toLocaleDateString(
+      LANG === "ar" ? "ar-MA" : "en-GB",
+      { year: "numeric", month: "short", day: "numeric" }
+    );
+  } catch(e) { dateStr = (c.createdAt || "").slice(0, 10); }
+
+  var avatar = c.name && c.name.length > 0 ? c.name[0].toUpperCase() : "?";
+
+  var badgeCls  = isPaid ? "badge-paid" : "badge-owed";
+  var badgeTxt  = isPaid ? t.badgePaid : t.badgeOwed;
+  var progCls   = isPaid ? "background: linear-gradient(90deg,#10b981,#059669)"
+                         : "background: linear-gradient(90deg,#d4af37,#c9a227)";
+  var remColor  = isPaid ? "color:#059669" : "color:#d97706";
+
+  var locHtml = "";
+  if (c.location) {
+    locHtml = '<span class="flex items-center gap-1" style="max-width:180px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">' +
+      '<svg width="12" height="12" fill="none" stroke="#d4af37" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0">' +
+        '<path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>' +
+        '<path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>' +
+      "</svg>" +
+      "<span>" + esc(c.location) + "</span></span>";
+  }
+
+  return '<div class="client-card">' +
+    '<div class="flex items-start gap-3.5 mb-3">' +
+      '<div class="w-11 h-11 rounded-full gold-gradient text-white text-lg font-bold flex items-center justify-center flex-shrink-0" style="box-shadow:0 2px 8px rgba(212,175,55,0.3)">' + esc(avatar) + "</div>" +
+      '<div class="flex-1 min-w-0">' +
+        '<div class="flex items-center justify-between gap-2 mb-1 flex-wrap">' +
+          '<span class="font-bold text-[15px] text-gray-900">' + esc(c.name) + "</span>" +
+          '<span class="badge ' + badgeCls + ' text-[11px] px-2.5 py-0.5 rounded-full font-semibold flex-shrink-0">' + esc(badgeTxt) + "</span>" +
+        "</div>" +
+        '<div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-gray-400 mb-2">' +
+          '<span class="flex items-center gap-1">' +
+            '<svg width="12" height="12" fill="none" stroke="#d4af37" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>' +
+            '<span dir="ltr">' + esc(c.phone) + "</span>" +
+          "</span>" +
+          locHtml +
+          '<span class="text-[11px] text-gray-300">' + esc(dateStr) + "</span>" +
+        "</div>" +
+        '<div class="text-[13px] text-gray-500 mb-3 overflow-hidden" style="white-space:nowrap;text-overflow:ellipsis">' + esc(c.serviceDetails) + "</div>" +
+        '<div class="grid grid-cols-3 gap-2 mb-2">' +
+          buildFinCol(t.colTotal, fmt(c.totalPrice.toFixed(2)), "") +
+          buildFinCol(t.colPaid,  fmt(c.amountPaid.toFixed(2)), "color:#059669") +
+          buildFinCol(t.colRem,   fmt(rem.toFixed(2)), remColor) +
+        "</div>" +
+        '<div class="progress-bar">' +
+          '<div class="progress-fill" style="width:' + pct + '%;' + progCls + '"></div>' +
+        "</div>" +
+      "</div>" +
+    "</div>" +
+    '<div class="flex gap-2 ' + (LANG === "ar" ? "justify-start" : "justify-end") + '">' +
+      '<button data-edit="' + esc(c.id) + '" class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border text-[12px] font-semibold transition-colors" style="border-color:rgba(212,175,55,0.35);color:#d4af37" onmouseenter="this.style.background=\'rgba(212,175,55,0.06)\'" onmouseleave="this.style.background=\'transparent\'">' +
+        '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>' +
+        esc(t.btnEdit) +
+      "</button>" +
+      '<button data-delete="' + esc(c.id) + '" class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg border text-[12px] font-semibold transition-colors" style="border-color:#fecaca;color:#ef4444" onmouseenter="this.style.background=\'#fef2f2\'" onmouseleave="this.style.background=\'transparent\'">' +
+        '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>' +
+        esc(t.btnDelete) +
+      "</button>" +
+    "</div>" +
+  "</div>";
+}
+
+function buildFinCol(label, value, colorStyle) {
+  return '<div>' +
+    '<div class="text-[10px] uppercase tracking-wider text-gray-400 mb-0.5">' + esc(label) + "</div>" +
+    '<div class="text-[13px] font-bold font-display" style="' + colorStyle + '">' + esc(value) + "</div>" +
+  "</div>";
+}
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/* ─── SHOW / HIDE OVERLAY ─── */
+function openOverlay(id) {
+  var el = $(id);
+  if (el) { el.classList.add("open"); }
+}
+function closeOverlay(id) {
+  var el = $(id);
+  if (el) { el.classList.remove("open"); }
+}
+
+/* ─── ADD MODAL ─── */
+function openAddModal() {
+  var t = TX[LANG];
+  $("edit-id").value    = "";
+  $("f-name").value     = "";
+  $("f-phone").value    = "";
+  $("f-service").value  = "";
+  $("f-location").value = "";
+  $("f-total").value    = "";
+  $("f-paid").value     = "";
+  setText("modal-title", t.modalAddTitle);
+  setText("modal-sub",   t.modalSub);
+  setText("btn-submit",  t.btnCreate);
+  setText("btn-cancel",  t.btnCancel);
+  clearAllErrors();
+  calcRemaining();
+  openOverlay("form-overlay");
+  setTimeout(function() { $("f-name").focus(); }, 60);
+}
+
+/* ─── EDIT MODAL ─── */
+function openEditModal(id) {
+  var t = TX[LANG];
+  var clients = loadClients();
+  var c = null;
+  for (var i = 0; i < clients.length; i++) {
+    if (clients[i].id === id) { c = clients[i]; break; }
+  }
+  if (!c) return;
+
+  $("edit-id").value    = c.id;
+  $("f-name").value     = c.name;
+  $("f-phone").value    = c.phone;
+  $("f-service").value  = c.serviceDetails;
+  $("f-location").value = c.location || "";
+  $("f-total").value    = String(c.totalPrice);
+  $("f-paid").value     = String(c.amountPaid);
+  setText("modal-title", t.modalEditTitle);
+  setText("modal-sub",   t.modalSub);
+  setText("btn-submit",  t.btnUpdate);
+  setText("btn-cancel",  t.btnCancel);
+  clearAllErrors();
+  calcRemaining();
+  openOverlay("form-overlay");
+  setTimeout(function() { $("f-name").focus(); }, 60);
+}
+
+function closeFormModal() {
+  closeOverlay("form-overlay");
+}
+
+/* ─── DELETE MODAL ─── */
+function openDeleteModal(id) {
+  var clients = loadClients();
+  var c = null;
+  for (var i = 0; i < clients.length; i++) {
+    if (clients[i].id === id) { c = clients[i]; break; }
+  }
+  if (!c) return;
+  DELETE_ID = id;
+  var t = TX[LANG];
+  setText("del-title",   t.delTitle);
+  setText("del-desc",    t.delDesc);
+  setText("del-cancel",  t.delCancel);
+  setText("del-confirm", t.delConfirm);
+  setText("del-name", "\u201C" + c.name + "\u201D");
+  openOverlay("delete-overlay");
+}
+
+function closeDeleteModal() {
+  DELETE_ID = null;
+  closeOverlay("delete-overlay");
+}
+
+function confirmDelete() {
+  if (!DELETE_ID) return;
+  var clients = loadClients().filter(function(c) { return c.id !== DELETE_ID; });
+  saveClients(clients);
+  closeDeleteModal();
+  toast(tr("toastDeleted"));
+  renderStats();
+  renderClients();
+}
+
+/* ─── REMAINING BALANCE (real-time) ─── */
+function calcRemaining() {
+  var total = parseFloat($("f-total").value) || 0;
+  var paid  = parseFloat($("f-paid").value)  || 0;
+  var rem   = total - paid;
+  if (rem < 0) rem = 0;
+  setText("remaining-val", TX[LANG].fmtAmt(rem.toFixed(2)));
+  var box = $("remaining-box");
+  if (!box) return;
+  if (rem === 0 && total > 0) {
+    box.style.background   = "#ecfdf5";
+    box.style.borderColor  = "#a7f3d0";
+    $("remaining-val").style.color = "#059669";
+  } else {
+    box.style.background   = "#fffdf4";
+    box.style.borderColor  = "rgba(212,175,55,0.3)";
+    $("remaining-val").style.color = "#d4af37";
+  }
+}
+
+/* ─── GPS ─── */
+function startGps() {
+  var t = TX[LANG];
+  var btn = $("btn-gps");
+  var msg = $("gps-msg");
+
+  if (!navigator.geolocation) {
+    msg.textContent = t.gpsError;
+    msg.className = "text-xs mt-1 text-red-500";
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin-icon"><svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg></span>';
+  msg.textContent = t.gpsLoading;
+  msg.className = "text-xs mt-1 text-gold";
+
+  navigator.geolocation.getCurrentPosition(
+    function(pos) {
+      $("f-location").value = pos.coords.latitude.toFixed(6) + ", " + pos.coords.longitude.toFixed(6);
+      btn.disabled = false;
+      btn.innerHTML = gpsIcon();
+      msg.textContent = "";
+      msg.className = "text-xs mt-1 hidden";
+    },
+    function() {
+      btn.disabled = false;
+      btn.innerHTML = gpsIcon();
+      msg.textContent = t.gpsError;
+      msg.className = "text-xs mt-1 text-red-500";
+    },
+    { timeout: 10000, enableHighAccuracy: true }
+  );
+}
+
+function gpsIcon() {
+  return '<svg width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">' +
+    '<path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>' +
+    '<path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>';
+}
+
+/* ─── FORM SUBMIT ─── */
+function submitForm() {
+  var t = TX[LANG];
+  var name     = ($("f-name").value    || "").trim();
+  var phone    = ($("f-phone").value   || "").trim();
+  var service  = ($("f-service").value || "").trim();
+  var location = ($("f-location").value|| "").trim();
+  var totalStr = $("f-total").value;
+  var paidStr  = $("f-paid").value;
+  var total    = parseFloat(totalStr);
+  var paid     = parseFloat(paidStr);
+  var editId   = $("edit-id").value;
+
+  clearAllErrors();
+  var ok = true;
+  if (!name)        { showErr("name",    t.errName);    ok = false; }
+  if (!phone)       { showErr("phone",   t.errPhone);   ok = false; }
+  if (!service)     { showErr("service", t.errService); ok = false; }
+  if (isNaN(total)) { showErr("total",   t.errTotal);   ok = false; }
+  if (isNaN(paid))  { showErr("paid",    t.errPaid);    ok = false; }
+  if (!ok) return;
+
+  var clients = loadClients();
+  if (editId) {
+    for (var i = 0; i < clients.length; i++) {
+      if (clients[i].id === editId) {
+        clients[i].name          = name;
+        clients[i].phone         = phone;
+        clients[i].serviceDetails = service;
+        clients[i].location      = location;
+        clients[i].totalPrice    = total;
+        clients[i].amountPaid    = paid;
+        break;
+      }
+    }
+    saveClients(clients);
+    closeFormModal();
+    toast(tr("toastUpdated"));
+  } else {
+    clients.unshift({
+      id: uid(), name: name, phone: phone,
+      serviceDetails: service, location: location,
+      totalPrice: total, amountPaid: paid,
+      createdAt: new Date().toISOString()
+    });
+    saveClients(clients);
+    closeFormModal();
+    toast(tr("toastAdded"));
+  }
+  renderStats();
+  renderClients();
+}
+
+/* ─── ERROR HELPERS ─── */
+function showErr(field, msg) {
+  var inp = $("f-"   + field);
+  var err = $("err-" + field);
+  if (inp) inp.classList.add("err");
+  if (err) { err.textContent = msg; err.classList.remove("hidden"); }
+}
+function clearErr(field) {
+  var inp = $("f-"   + field);
+  var err = $("err-" + field);
+  if (inp) inp.classList.remove("err");
+  if (err) { err.textContent = ""; err.classList.add("hidden"); }
+}
+function clearAllErrors() {
+  ["name","phone","service","total","paid"].forEach(clearErr);
+  var gm = $("gps-msg");
+  if (gm) { gm.textContent = ""; gm.className = "text-xs mt-1 hidden"; }
+}
+
+/* ─── TOAST ─── */
+function toast(msg) {
+  var box = $("toast");
+  $("toast-text").textContent = msg;
+  box.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function() { box.classList.remove("show"); }, 3000);
+}
+
+/* ─── INIT ─── */
+document.addEventListener("DOMContentLoaded", function() {
+
+  /* Language switcher */
+  $("lang-select").addEventListener("change", function() {
+    setLang(this.value);
+    /* Keep select aligned correctly */
+    var sel = $("lang-select");
+    sel.style.paddingLeft  = LANG === "ar" ? "16px" : "16px";
+    sel.style.paddingRight = LANG === "ar" ? "36px" : "36px";
+  });
+
+  /* Add client button */
+  $("btn-add").addEventListener("click", openAddModal);
+
+  /* Modal close / cancel */
+  $("btn-close-form").addEventListener("click", closeFormModal);
+  $("btn-cancel").addEventListener("click", closeFormModal);
+
+  /* Click backdrop to close form modal */
+  $("form-overlay").addEventListener("click", function(e) {
+    if (e.target === this) closeFormModal();
+  });
+
+  /* Click backdrop to close delete modal */
+  $("delete-overlay").addEventListener("click", function(e) {
+    if (e.target === this) closeDeleteModal();
+  });
+
+  /* Submit */
+  $("btn-submit").addEventListener("click", submitForm);
+
+  /* GPS */
+  $("btn-gps").addEventListener("click", startGps);
+
+  /* Real-time remaining */
+  $("f-total").addEventListener("input", calcRemaining);
+  $("f-paid").addEventListener("input",  calcRemaining);
+
+  /* Clear errors on typing */
+  ["name","phone","service","total","paid"].forEach(function(f) {
+    var el = $("f-" + f);
+    if (el) el.addEventListener("input", function() { clearErr(f); });
+  });
+
+  /* Delete modal buttons */
+  $("del-cancel").addEventListener("click",  closeDeleteModal);
+  $("del-confirm").addEventListener("click", confirmDelete);
+
+  /* Escape key */
+  document.addEventListener("keydown", function(e) {
+    if (e.key === "Escape") { closeFormModal(); closeDeleteModal(); }
+  });
+
+  /* Search */
+  $("search-input").addEventListener("input", renderClients);
+
+  /* Initial render */
+  applyTranslations();
+  renderStats();
+  renderClients();
+});
+</script>
+</body>
+</html>
