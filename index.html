@@ -1,6 +1,107 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-<head>
+<body class="bg-gray-50 font-sans text-right antialiased" dir="rtl">
+
+    <div class="max-auto p-4 md:p-8 space-y-6 min-h-screen bg-gradient-to-br from-gray-50 to-gray-200">
+        
+        <div class="bg-white/70 backdrop-blur-md p-6 rounded-3xl shadow-xl border border-white/40 text-center animate-fade-in">
+            <h1 class="text-3xl font-extrabold text-gold tracking-tight">بلغازي ديكور ✨</h1>
+            <p class="text-gray-500 text-sm mt-1">إدارة العملاء والميزانية</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div class="bg-white p-5 rounded-2xl shadow-md border-b-4 border-gold text-center">
+                <span class="text-xs text-gray-400 block mb-1">إجمالي العملاء</span>
+                <span id="total-clients" class="text-2xl font-bold text-gray-800">0</span>
+            </div>
+            <div class="bg-gold p-5 rounded-2xl shadow-lg text-center text-white">
+                <span class="text-xs opacity-80 block mb-1">المبلغ المتبقي</span>
+                <span id="total-debt" class="text-xl font-bold">0 درهم</span>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-3xl shadow-lg space-y-4">
+            <h3 class="text-lg font-bold text-gray-700">إضافة عميل جديد</h3>
+            <input type="text" id="name" placeholder="اسم العميل" class="w-full p-4 bg-gray-100 rounded-xl border-none focus:ring-2 focus:ring-gold outline-none">
+            <input type="number" id="debt" placeholder="المبلغ (درهم)" class="w-full p-4 bg-gray-100 rounded-xl border-none focus:ring-2 focus:ring-gold outline-none">
+            <button onclick="addClient()" class="w-full bg-gold hover:bg-yellow-600 text-white font-bold py-4 rounded-xl shadow-lg transition-transform active:scale-95">
+                + إضافة للقائمة
+            </button>
+        </div>
+
+        <div id="client-list" class="space-y-3 pb-20">
+            </div>
+    </div>
+
+    <script>
+        // 1. إدارة البيانات (LocalStorage)
+        let clients = JSON.parse(localStorage.getItem('belrhazi_data')) || [];
+
+        function updateUI() {
+            const list = document.getElementById('client-list');
+            list.innerHTML = '';
+            let totalDebt = 0;
+
+            clients.forEach((c, index) => {
+                totalDebt += parseFloat(c.debt);
+                list.innerHTML += `
+                    <div class="bg-white/90 p-4 rounded-2xl shadow-sm flex justify-between items-center border-r-4 border-gold animate-slide-up">
+                        <div>
+                            <p class="font-bold text-gray-800">${c.name}</p>
+                            <p class="text-gold font-semibold">${c.debt} درهم</p>
+                        </div>
+                        <button onclick="deleteClient(${index})" class="bg-red-50 text-red-500 p-2 rounded-lg text-xs font-bold px-3">حذف</button>
+                    </div>
+                `;
+            });
+
+            document.getElementById('total-clients').innerText = clients.length;
+            document.getElementById('total-debt').innerText = totalDebt + ' درهم';
+            localStorage.setItem('belrhazi_data', JSON.stringify(clients));
+        }
+
+        function addClient() {
+            const nameInput = document.getElementById('name');
+            const debtInput = document.getElementById('debt');
+            if(nameInput.value && debtInput.value) {
+                clients.push({name: nameInput.value, debt: debtInput.value});
+                updateUI();
+                nameInput.value = '';
+                debtInput.value = '';
+            }
+        }
+
+        function deleteClient(index) {
+            if(confirm('واش متأكد بغيتي تمسح هاد العميل؟')) {
+                clients.splice(index, 1);
+                updateUI();
+            }
+        }
+
+        updateUI();
+
+        // 2. كود الـ Service Worker (للعمل بدون انترنت)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                .then(() => console.log('التطبيق جاهز للعمل أوفلاين!'))
+                .catch(err => console.log('مشكل فـ SW:', err));
+            });
+        }
+    </script>
+
+    <style>
+        .text-gold { color: #d4af37; }
+        .bg-gold { background-color: #d4af37; }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+        .animate-slide-up { animation: slideUp 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    </style>
+
+</body>
+</html>
+
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>بلغازي ديكور — إدارة العملاء</title>
