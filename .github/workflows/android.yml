@@ -12,20 +12,24 @@ jobs:
         with:
           node-version: 18
 
-      - name: Build Android
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Build Android App
         run: |
-          # تجهيز البيئة
+          # 1. تنظيف وتجهيز البيئة
           npm init -y
           npm install @capacitor/core @capacitor/cli @capacitor/android
           
-          # تهيئة Capacitor (إيلا ماكانش)
+          # 2. كري ملفات Capacitor و Android من الزيرو
           npx cap init "Belrhazi" "com.belrhazi.app" --web-dir . || true
-          
-          # إضافة منصة أندرويد وبناء الملف
           npx cap add android || true
           npx cap copy
           
-          # الدخول لمجلد أندرويد وبناء الـ APK
+          # 3. بناء الـ APK
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug
@@ -33,5 +37,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v3
         with:
-          name: Belrhazi-Final-App
+          name: Belrhazi-App
           path: android/app/build/outputs/apk/debug/app-debug.apk
