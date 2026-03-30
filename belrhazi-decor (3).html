@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>بلغازي ديكور — إدارة العملاء</title>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:wght@400;600;700&display=swap" rel="stylesheet"/>
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- html2canvas -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#d4af37;--gold-light:#e8cc6a;--gold-dim:rgba(212,175,55,.18);
+  --bg:#faf9f6;--white:#ffffff;--border:#e8e0c8;
+  --text:#1a1a1a;--sub:#666;--faint:#bbb;
+  --shadow:0 2px 16px rgba(0,0,0,.07);
+  --shadow-gold:0 4px 20px rgba(212,175,55,.22);
+}
+body{font-family:'Amiri',Georgia,serif;background:var(--bg);color:var(--text);min-height:100vh}
+@keyframes slideUp{from{opacity:0;transform:translateY(36px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;top:18px;left:50%;transform:translateX(-50%) translateY(-80px);
+  background:var(--white);border:1px solid var(--gold-dim);border-radius:12px;
+  padding:11px 20px;display:flex;align-items:center;gap:9px;
+  font-size:13px;font-weight:600;color:var(--text);z-index:900;
+  box-shadow:0 6px 28px rgba(0,0,0,.12);transition:transform .35s cubic-bezier(.34,1.56,.64,1);
+  white-space:nowrap;
+}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* ── HEADER ── */
+header{
+  background:var(--white);border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:100;
+}
+.header-inner{
+  max-width:960px;margin:0 auto;padding:13px 20px;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+.brand{display:flex;align-items:center;gap:11px}
+.header-right{display:flex;align-items:center;gap:10px}
+.status-badge{
+  display:flex;align-items:center;gap:6px;padding:5px 12px;
+  border-radius:20px;font-size:11px;font-weight:600;border:1px solid var(--border);
+  background:var(--white);
+}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+.dot-green{background:#22c55e;box-shadow:0 0 6px #22c55e}
+.dot-amber{background:#f59e0b}
+.lang-wrap{position:relative}
+.lang-sel{
+  appearance:none;background:var(--white);border:1px solid var(--border);
+  border-radius:8px;padding:6px 28px 6px 10px;font-size:12px;cursor:pointer;
+  font-family:inherit;color:var(--text);
+}
+.lang-chev{position:absolute;right:9px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--gold)}
+
+/* ── MAIN ── */
+main{max-width:960px;margin:0 auto;padding:28px 20px}
+
+/* ── STATS ── */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+@media(max-width:480px){.stats-grid{grid-template-columns:1fr}}
+.stat-card{
+  background:var(--white);border:1px solid var(--border);border-radius:18px;
+  padding:18px 20px;display:flex;align-items:center;gap:16px;
+  box-shadow:var(--shadow);
+}
+.gold-stat{
+  background:linear-gradient(135deg,#c9a227,#d4af37,#e8cc6a);
+  border:none;box-shadow:var(--shadow-gold);
+}
+.stat-icon{
+  width:44px;height:44px;border-radius:12px;background:rgba(212,175,55,.12);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.gold-stat .stat-icon{background:rgba(255,255,255,.2)}
+.stat-label{font-size:11px;color:var(--sub);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px}
+.stat-val{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:700;color:var(--text)}
+.gold-stat .stat-label{color:rgba(255,255,255,.85)}
+.gold-stat .stat-val{color:#fff}
+
+/* ── SAVE BAR ── */
+.save-bar{
+  background:var(--white);border:1px solid var(--border);border-radius:12px;
+  padding:10px 16px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;
+  font-size:12px;color:var(--sub);
+}
+.save-dot{width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;box-shadow:0 0 6px #22c55e}
+
+/* ── TOOLBAR ── */
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:22px;flex-wrap:wrap}
+.toolbar-right{display:flex;gap:8px;margin-right:auto}
+[dir=ltr] .toolbar-right{margin-right:unset;margin-left:auto}
+.search-wrap{position:relative;flex:1;min-width:160px}
+.search-icon{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--faint);pointer-events:none}
+[dir=ltr] .search-icon{right:unset;left:12px}
+.search-input{
+  width:100%;padding:9px 38px 9px 14px;border:1px solid var(--border);border-radius:10px;
+  font-size:13px;font-family:inherit;background:var(--white);color:var(--text);outline:none;
+}
+[dir=ltr] .search-input{padding:9px 14px 9px 38px}
+.search-input:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-dim)}
+.btn-add{
+  display:flex;align-items:center;gap:7px;padding:9px 18px;
+  background:var(--gold);color:#fff;border:none;border-radius:10px;
+  font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;
+  box-shadow:var(--shadow-gold);white-space:nowrap;transition:opacity .2s;
+}
+.btn-add:hover{opacity:.88}
+.btn-export,.btn-import-lbl{
+  display:flex;align-items:center;gap:6px;padding:8px 13px;
+  background:var(--white);border:1px solid var(--border);border-radius:9px;
+  font-size:12px;color:var(--sub);cursor:pointer;font-family:inherit;transition:border-color .2s;
+}
+.btn-export:hover,.btn-import-lbl:hover{border-color:var(--gold)}
+
+/* ── EMPTY STATE ── */
+.empty{text-align:center;padding:70px 20px}
+.empty-icon{
+  width:72px;height:72px;border-radius:50%;background:var(--gold-dim);
+  display:flex;align-items:center;justify-content:center;margin:0 auto 18px;
+}
+.empty h3{font-size:18px;margin-bottom:7px}
+.empty p{font-size:13px;color:var(--sub);margin-bottom:22px}
+.btn-add-first{
+  display:inline-flex;align-items:center;gap:7px;padding:11px 24px;
+  background:transparent;border:1.5px solid var(--gold);border-radius:12px;
+  font-size:14px;font-weight:700;color:var(--gold);cursor:pointer;font-family:inherit;transition:background .2s;
+}
+.btn-add-first:hover{background:var(--gold-dim)}
+
+/* ── CLIENT LIST ── */
+.clients-list{display:flex;flex-direction:column;gap:18px}
+
+/* ── CLIENT CARD ── */
+.card{
+  background:var(--white);border:1px solid var(--border);border-radius:20px;
+  overflow:hidden;box-shadow:var(--shadow);animation:slideUp .35s ease;
+}
+.card-header{
+  padding:18px 20px 14px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;
+}
+.client-name{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;margin-bottom:2px}
+.client-phone{font-size:12px;color:var(--sub);direction:ltr;display:inline-block}
+.badge{
+  padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;
+}
+.badge-paid{background:#dcfce7;color:#166534}
+.badge-owed{background:#fef9c3;color:#854d0e}
+.card-divider{height:1px;background:var(--border);margin:0 20px}
+.card-service{padding:13px 20px;font-size:13px;color:var(--sub);line-height:1.55}
+
+/* ── MINI MAP ── */
+.mini-map-wrap{
+  height:150px;position:relative;overflow:hidden;
+  border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+  cursor:pointer;
+}
+.mini-map-container{width:100%;height:100%}
+.mini-map-overlay{
+  position:absolute;inset:0;z-index:10;
+  display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;
+  pointer-events:none;
+}
+.mini-map-hint{
+  background:rgba(0,0,0,.6);color:#fff;font-size:10px;
+  padding:3px 10px;border-radius:20px;
+}
+
+/* ── FINANCE ROW ── */
+.fin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:14px 20px}
+.fin-col{text-align:center}
+.fin-label{font-size:10px;color:var(--faint);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px}
+.fin-val{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:700}
+
+/* ── CARD ACTIONS ── */
+.card-actions{padding:12px 20px;display:flex;gap:8px;border-top:1px solid var(--border)}
+.btn-edit,.btn-del,.btn-invoice{
+  flex:1;padding:9px;border-radius:10px;font-size:12px;font-weight:700;
+  cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;transition:opacity .2s;
+}
+.btn-edit{background:transparent;border:1.5px solid var(--border);color:var(--text)}
+.btn-edit:hover{border-color:var(--gold)}
+.btn-del{background:transparent;border:1.5px solid #fee2e2;color:#dc2626}
+.btn-del:hover{background:#fef2f2}
+.btn-invoice{background:#16a34a;border:1.5px solid #16a34a;color:#fff}
+.btn-invoice:hover{opacity:.88}
+
+/* ── OVERLAY / MODAL ── */
+.overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.88);backdrop-filter:blur(6px);
+  z-index:200;align-items:flex-end;justify-content:center;
+}
+@media(min-width:600px){.overlay{align-items:center;padding:16px}}
+.overlay.open{display:flex}
+.modal{
+  background:var(--white);width:100%;max-width:520px;
+  border-radius:22px 22px 0 0;max-height:92vh;overflow-y:auto;
+  animation:slideUp .3s ease;
+}
+@media(min-width:600px){.modal{border-radius:22px}}
+.modal-head{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:18px 22px 14px;border-bottom:1px solid var(--border);
+  position:sticky;top:0;background:var(--white);z-index:10;border-radius:22px 22px 0 0;
+}
+.modal-icon-box{
+  width:32px;height:32px;background:var(--gold);border-radius:9px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.modal-t{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:700}
+.modal-st{font-size:11px;color:var(--sub)}
+.btn-close{
+  width:32px;height:32px;border-radius:8px;background:transparent;
+  border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  color:var(--sub);transition:background .2s;
+}
+.btn-close:hover{background:#f5f5f5}
+
+/* ── FORM ── */
+.form-body{padding:20px 22px 28px;display:flex;flex-direction:column;gap:14px}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-label{font-size:12px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.08em}
+.form-input,.form-textarea{
+  padding:10px 13px;border:1.5px solid var(--border);border-radius:10px;
+  font-size:14px;font-family:inherit;color:var(--text);background:var(--white);outline:none;transition:border-color .2s;
+}
+.form-input:focus,.form-textarea:focus{border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-dim)}
+.form-textarea{min-height:80px;resize:vertical}
+.form-input.err,.form-textarea.err{border-color:#dc2626}
+.err-msg{font-size:11px;color:#dc2626}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.loc-row{display:flex;gap:8px}
+.loc-row .form-input{flex:1}
+.btn-gps{
+  padding:10px 13px;background:var(--gold-dim);border:1.5px solid var(--gold);
+  border-radius:10px;cursor:pointer;font-size:12px;color:var(--gold);font-weight:700;
+  white-space:nowrap;transition:background .2s;font-family:inherit;
+}
+.btn-gps:hover{background:rgba(212,175,55,.28)}
+.rem-row{
+  background:var(--gold-dim);border:1px solid rgba(212,175,55,.3);
+  border-radius:10px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;
+}
+.rem-label{font-size:12px;color:var(--sub);font-weight:600}
+.rem-val{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:700;color:var(--gold)}
+.form-actions{display:flex;gap:10px;margin-top:4px}
+.btn-cancel,.btn-submit{
+  flex:1;padding:11px;border-radius:12px;font-size:14px;font-weight:700;
+  cursor:pointer;font-family:inherit;transition:opacity .2s;
+}
+.btn-cancel{background:var(--white);border:1.5px solid var(--border);color:var(--sub)}
+.btn-submit{background:var(--gold);border:none;color:#fff;box-shadow:var(--shadow-gold)}
+.btn-submit:hover,.btn-cancel:hover{opacity:.85}
+.btn-submit:disabled{opacity:.6;cursor:not-allowed}
+
+/* ── DELETE MODAL ── */
+.del-icon-wrap{
+  width:56px;height:56px;border-radius:50%;background:#fee2e2;
+  display:flex;align-items:center;justify-content:center;margin:0 auto 14px;
+}
+.del-title{font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:700;text-align:center;margin-bottom:8px}
+.del-desc{font-size:13px;color:var(--sub);text-align:center;line-height:1.6;margin-bottom:22px}
+.del-name{font-weight:700;color:var(--text)}
+.btn-del-confirm{
+  flex:1;padding:11px;border-radius:12px;font-size:14px;font-weight:700;
+  cursor:pointer;font-family:inherit;background:#dc2626;border:none;color:#fff;transition:opacity .2s;
+}
+.btn-del-confirm:hover{opacity:.88}
+
+/* ── INVOICE MODAL ── */
+.invoice-preview{
+  background:#fff;border:1.5px solid #e8e0c8;border-radius:16px;
+  padding:28px 24px;font-family:'Amiri',Georgia,serif;
+}
+.inv-gold-line{height:1px;background:linear-gradient(90deg,#d4af37,#e8cc6a,#d4af37)}
+.inv-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;margin-bottom:18px}
+.inv-fin{
+  background:#fffdf4;border:1px solid rgba(212,175,55,.25);
+  border-radius:10px;padding:14px 16px;
+}
+.inv-fin-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.inv-col{text-align:center}
+.inv-col-label{font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px}
+.inv-col-val{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:700}
+.status-msg{
+  border-radius:10px;padding:10px 14px;font-size:13px;font-weight:600;text-align:center;
+}
+
+/* ── FOOTER ── */
+footer{text-align:center;padding:22px;font-size:11px;color:var(--faint);font-family:'Cormorant Garamond',serif}
+</style>
+</head>
+<body>
+
+<!-- TOAST -->
+<div id="toast" class="toast">
+  <svg width="15" height="15" fill="none" stroke="#d4af37" stroke-width="2.5" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+  </svg>
+  <span id="toast-msg"></span>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="header-inner">
+    <div class="brand">
+      <svg width="34" height="34" viewBox="0 0 36 36" fill="none" style="flex-shrink:0">
+        <polygon points="18,2 34,18 18,34 2,18" fill="none" stroke="#d4af37" stroke-width="1.5"/>
+        <polygon points="18,8 28,18 18,28 8,18" fill="none" stroke="#d4af37" stroke-width="1" opacity=".55"/>
+        <polygon points="18,13 23,18 18,23 13,18" fill="#d4af37" opacity=".95"/>
+        <line x1="18" y1="2" x2="18" y2="8" stroke="#d4af37" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="2" y1="18" x2="8" y2="18" stroke="#d4af37" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="34" y1="18" x2="28" y2="18" stroke="#d4af37" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="18" y1="34" x2="18" y2="28" stroke="#d4af37" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <div>
+        <h1 id="brand-name" style="font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;line-height:1.1">بلغازي ديكور</h1>
+        <p id="brand-sub" style="font-size:9px;color:#d4af37;letter-spacing:.2em;text-transform:uppercase;margin-top:3px">إدارة العملاء</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div id="status-badge" class="status-badge badge-online">
+        <span class="dot dot-green"></span>
+        <span id="status-txt">متصل</span>
+      </div>
+      <div class="lang-wrap">
+        <select class="lang-sel" id="lang-sel" onchange="switchLang(this.value)">
+          <option value="ar">العربية</option>
+          <option value="en">English</option>
+        </select>
+        <svg class="lang-chev" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main>
+  <!-- STATS -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">
+        <svg width="22" height="22" fill="none" stroke="#d4af37" stroke-width="1.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="stat-label" id="stat-clients-lbl">العملاء الإجمالي</div>
+        <div class="stat-val" id="stat-clients-val">0</div>
+      </div>
+    </div>
+    <div class="stat-card gold-stat">
+      <div class="stat-icon">
+        <svg width="22" height="22" fill="none" stroke="white" stroke-width="1.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="stat-label" id="stat-bal-lbl">إجمالي الرصيد المتبقي</div>
+        <div class="stat-val" id="stat-bal-val">0.00 درهم</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SAVE BAR -->
+  <div class="save-bar">
+    <div style="display:flex;align-items:center;gap:7px">
+      <span class="save-dot"></span>
+      <span id="save-bar-txt" style="font-size:12px">البيانات محفوظة محلياً على جهازك</span>
+    </div>
+    <span id="last-saved-txt" style="font-size:11px;color:#aaa"></span>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <div class="search-wrap">
+      <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+      </svg>
+      <input type="text" class="search-input" id="search-input" placeholder="بحث عن عميل..." oninput="renderClients()"/>
+    </div>
+    <button class="btn-add" onclick="openForm()">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+      </svg>
+      <span id="btn-add-lbl">إضافة عميل</span>
+    </button>
+    <div class="toolbar-right">
+      <button class="btn-export" onclick="exportData()">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+        </svg>
+        <span id="export-lbl">تصدير</span>
+      </button>
+      <label class="btn-import-lbl">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+        </svg>
+        <span id="import-lbl">استيراد</span>
+        <input type="file" accept=".json" style="display:none" onchange="importData(event)"/>
+      </label>
+    </div>
+  </div>
+
+  <!-- CLIENT LIST -->
+  <div id="clients-list"></div>
+</main>
+
+<footer>© <span id="yr"></span> Belrhazi Décor &nbsp;·&nbsp; بلغازي ديكور</footer>
+
+<!-- ═══════════ ADD / EDIT MODAL ═══════════ -->
+<div class="overlay" id="form-ov" onclick="if(event.target===this)closeForm()">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-head">
+      <div style="display:flex;align-items:center;gap:11px">
+        <div class="modal-icon-box" id="form-icon-box" style="background:#d4af37;font-size:17px;font-family:'Cormorant Garamond',serif;color:#fff;font-weight:700;letter-spacing:0">
+          ✦
+        </div>
+        <div>
+          <div class="modal-t" id="form-title">إضافة عميل جديد</div>
+          <div class="modal-st" id="form-sub">أملأ بيانات العميل أدناه</div>
+        </div>
+      </div>
+      <button class="btn-close" onclick="closeForm()">
+        <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    <div class="form-body">
+      <input type="hidden" id="f-id"/>
+      <input type="hidden" id="f-lat"/>
+      <input type="hidden" id="f-lng"/>
+      <div class="form-group">
+        <label class="form-label" id="lbl-name">اسم العميل</label>
+        <input class="form-input" id="f-name" placeholder="أدخل اسم العميل"/>
+        <span class="err-msg" id="err-name" style="display:none"></span>
+      </div>
+      <div class="form-group">
+        <label class="form-label" id="lbl-phone">رقم الهاتف</label>
+        <input class="form-input" id="f-phone" placeholder="أدخل رقم الهاتف" dir="ltr"/>
+        <span class="err-msg" id="err-phone" style="display:none"></span>
+      </div>
+      <div class="form-group">
+        <label class="form-label" id="lbl-service">تفاصيل الخدمة</label>
+        <textarea class="form-textarea" id="f-service" placeholder="صف الخدمة المقدمة..."></textarea>
+        <span class="err-msg" id="err-service" style="display:none"></span>
+      </div>
+      <div class="form-group">
+        <label class="form-label" id="lbl-loc">الموقع (اختياري)</label>
+        <div class="loc-row">
+          <input class="form-input" id="f-loc" placeholder="أدخل العنوان يدوياً"/>
+          <button class="btn-gps" id="btn-gps" onclick="getGPS()">📍 GPS</button>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="form-group">
+          <label class="form-label" id="lbl-total">السعر الإجمالي (درهم)</label>
+          <input class="form-input" id="f-total" type="number" min="0" step="0.01" placeholder="0.00" oninput="updateRem()"/>
+          <span class="err-msg" id="err-total" style="display:none"></span>
+        </div>
+        <div class="form-group">
+          <label class="form-label" id="lbl-paid">المبلغ المدفوع (درهم)</label>
+          <input class="form-input" id="f-paid" type="number" min="0" step="0.01" placeholder="0.00" oninput="updateRem()"/>
+          <span class="err-msg" id="err-paid" style="display:none"></span>
+        </div>
+      </div>
+      <div class="rem-row">
+        <span class="rem-label" id="lbl-rem">الرصيد المتبقي:</span>
+        <span class="rem-val" id="rem-val">0.00 درهم</span>
+      </div>
+      <div class="form-actions">
+        <button class="btn-cancel" onclick="closeForm()" id="btn-cancel">إلغاء</button>
+        <button class="btn-submit" onclick="submitForm()" id="btn-submit">حفظ وإنشاء العميل</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ DELETE MODAL ═══════════ -->
+<div class="overlay" id="del-ov" onclick="if(event.target===this)closeDel()">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-head">
+      <div style="display:flex;align-items:center;gap:11px">
+        <div class="modal-icon-box" style="background:#dc2626">
+          <svg width="15" height="15" fill="none" stroke="white" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+          </svg>
+        </div>
+        <div class="modal-t" id="del-title">تأكيد الحذف</div>
+      </div>
+      <button class="btn-close" onclick="closeDel()">
+        <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    <div style="padding:28px 22px">
+      <div class="del-icon-wrap">
+        <svg width="28" height="28" fill="none" stroke="#dc2626" stroke-width="1.5" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+      </div>
+      <div class="del-title" id="del-modal-title">تأكيد الحذف</div>
+      <div class="del-desc" id="del-desc">هل أنت متأكد من حذف هذا العميل؟ لا يمكن التراجع.</div>
+      <div style="display:flex;gap:10px">
+        <button class="btn-cancel" style="flex:1" onclick="closeDel()" id="del-cancel-btn">إلغاء</button>
+        <button class="btn-del-confirm" onclick="confirmDelete()" id="del-ok-btn">نعم، احذف</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ INVOICE MODAL ═══════════ -->
+<div class="overlay" id="inv-ov" onclick="if(event.target===this)closeInvoice()">
+  <div class="modal" style="max-width:540px">
+    <div class="modal-head">
+      <div style="display:flex;align-items:center;gap:11px">
+        <div class="modal-icon-box" style="background:#16a34a;font-size:17px;color:#fff;display:flex;align-items:center;justify-content:center">
+          <svg width="16" height="16" fill="none" stroke="white" stroke-width="2.2" viewBox="0 0 24 24">
+            <rect x="4" y="2" width="16" height="20" rx="2" stroke="white" stroke-width="2" fill="none"/>
+            <line x1="8" y1="8" x2="16" y2="8" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            <line x1="8" y1="12" x2="16" y2="12" stroke="white" stroke-width="2" stroke-linecap="round"/>
+            <line x1="8" y1="16" x2="12" y2="16" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="modal-t" id="inv-title">فاتورة رسمية</div>
+          <div class="modal-st" id="inv-client-name"></div>
+        </div>
+      </div>
+      <button class="btn-close" onclick="closeInvoice()">
+        <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    <div style="padding:18px 22px 28px;display:flex;flex-direction:column;gap:16px">
+      <div class="invoice-preview" id="invoice-preview"></div>
+      <div id="inv-status-msg" style="display:none" class="status-msg"></div>
+      <div style="display:flex;gap:10px">
+        <button class="btn-cancel" style="flex:1" onclick="closeInvoice()" id="inv-cancel-btn">إلغاء</button>
+        <button class="btn-submit" style="flex:2;background:#16a34a" onclick="generateInvoice()" id="inv-gen-btn">إنشاء فاتورة</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════
+// TRANSLATIONS
+// ════════════════════════════════════════════════
+const TX = {
+  ar: {
+    brandName:"بلغازي ديكور", brandSub:"إدارة العملاء",
+    statClients:"العملاء الإجمالي", statBalance:"إجمالي الرصيد المتبقي",
+    searchPH:"بحث عن عميل...", btnAdd:"إضافة عميل", addFirstBtn:"+ إضافة أول عميل",
+    noClients:"لا يوجد عملاء بعد", noClientsDesc:"ابدأ بإضافة أول عميل لك",
+    modalAddT:"إضافة عميل جديد", modalEditT:"تعديل بيانات العميل", modalSub:"أملأ بيانات العميل أدناه",
+    lblName:"اسم العميل", lblPhone:"رقم الهاتف", lblService:"تفاصيل الخدمة",
+    lblLoc:"الموقع (اختياري)", lblTotal:"السعر الإجمالي (درهم)", lblPaid:"المبلغ المدفوع (درهم)",
+    lblRem:"الرصيد المتبقي:", phName:"أدخل اسم العميل", phPhone:"أدخل رقم الهاتف",
+    phService:"صف الخدمة المقدمة...", phLoc:"أدخل العنوان يدوياً",
+    btnCancel:"إلغاء", btnCreate:"حفظ وإنشاء العميل", btnUpdate:"حفظ التعديلات",
+    errName:"اسم العميل مطلوب", errPhone:"رقم الهاتف مطلوب", errService:"تفاصيل الخدمة مطلوبة",
+    errTotal:"السعر الإجمالي مطلوب", errPaid:"المبلغ المدفوع مطلوب",
+    gpsLoad:"جاري تحديد الموقع...", gpsErr:"تعذر تحديد الموقع. أدخله يدوياً.",
+    delT:"تأكيد الحذف", delD:"هل أنت متأكد من حذف هذا العميل؟ لا يمكن التراجع.",
+    delCancel:"إلغاء", delOk:"نعم، احذف",
+    badgePaid:"مكتمل", badgeOwed:"متبقي",
+    colT:"الإجمالي", colP:"المدفوع", colR:"المتبقي",
+    btnEdit:"تعديل", btnDel:"حذف", btnInvoice:"إنشاء فاتورة",
+    tAdded:"تم حفظ العميل بنجاح ✓", tUpdated:"تم حفظ التعديلات بنجاح ✓",
+    tDeleted:"تم الحذف بنجاح ✓", tExported:"تم تصدير البيانات ✓", tImported:"تم استيراد البيانات بنجاح ✓",
+    exportLbl:"تصدير", importLbl:"استيراد",
+    netOnline:"متصل", netOffline:"غير متصل",
+    savedBar:"البيانات محفوظة محلياً على جهازك", lastSaved:"آخر حفظ: ",
+    invoiceTitle:"فاتورة رسمية", invoiceClient:"العميل", invoicePhone:"الهاتف",
+    invoiceService:"الخدمة", invoiceTotal:"الإجمالي", invoicePaid:"المدفوع",
+    invoiceRemaining:"المتبقي", invoiceDate:"التاريخ", invoiceStatus:"الحالة",
+    invoiceSaving:"جاري حفظ الفاتورة...", invoiceSaved:"تم حفظ الفاتورة! جاري فتح واتساب...",
+    locGps:"📍 موقع GPS محدد على الخريطة",
+    fmt: v => v + " درهم", fmtS: v => v + " د",
+  },
+  en: {
+    brandName:"Belrhazi Décor", brandSub:"Client Management",
+    statClients:"Total Clients", statBalance:"Total Outstanding Balance",
+    searchPH:"Search clients...", btnAdd:"+ Add Client", addFirstBtn:"+ Add First Client",
+    noClients:"No clients yet", noClientsDesc:"Start by adding your first client",
+    modalAddT:"New Client", modalEditT:"Edit Client", modalSub:"Fill in the client details below",
+    lblName:"Client Name", lblPhone:"Phone Number", lblService:"Service Details",
+    lblLoc:"Location (Optional)", lblTotal:"Total Price (MAD)", lblPaid:"Amount Paid (MAD)",
+    lblRem:"Remaining Balance:", phName:"Enter client name", phPhone:"Enter phone number",
+    phService:"Describe the service...", phLoc:"Enter address manually",
+    btnCancel:"Cancel", btnCreate:"Save & Create Client", btnUpdate:"Save Changes",
+    errName:"Client name is required", errPhone:"Phone number is required",
+    errService:"Service details are required", errTotal:"Total price is required", errPaid:"Amount paid is required",
+    gpsLoad:"Locating...", gpsErr:"Could not get location. Enter manually.",
+    delT:"Confirm Delete", delD:"Are you sure? This cannot be undone.",
+    delCancel:"Cancel", delOk:"Yes, Delete",
+    badgePaid:"Paid", badgeOwed:"Outstanding",
+    colT:"Total", colP:"Paid", colR:"Remaining",
+    btnEdit:"Edit", btnDel:"Delete", btnInvoice:"Generate Invoice",
+    tAdded:"Client saved ✓", tUpdated:"Changes saved ✓",
+    tDeleted:"Client deleted ✓", tExported:"Data exported ✓", tImported:"Data imported ✓",
+    exportLbl:"Export", importLbl:"Import",
+    netOnline:"Online", netOffline:"Offline",
+    savedBar:"Data saved locally on your device", lastSaved:"Last saved: ",
+    invoiceTitle:"Official Invoice", invoiceClient:"Client", invoicePhone:"Phone",
+    invoiceService:"Service", invoiceTotal:"Total", invoicePaid:"Paid",
+    invoiceRemaining:"Remaining", invoiceDate:"Date", invoiceStatus:"Status",
+    invoiceSaving:"Saving invoice...", invoiceSaved:"Invoice saved! Opening WhatsApp...",
+    locGps:"📍 GPS location pinned on map",
+    fmt: v => "MAD " + v, fmtS: v => "MAD " + v,
+  }
+};
+
+// ════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════
+const STORAGE_KEY = "belrhazi_v3";
+const SAVED_TS_KEY = "belrhazi_v3_ts";
+let lang = "ar";
+let clients = [];
+let deleteId = null;
+let invoiceClient = null;
+let maps = {};
+
+function tx() { return TX[lang]; }
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+function loadClients() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); } catch { return []; }
+}
+
+function saveClients(list) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  localStorage.setItem(SAVED_TS_KEY, new Date().toISOString());
+  updateLastSaved();
+}
+
+function updateLastSaved() {
+  const ts = localStorage.getItem(SAVED_TS_KEY);
+  if (ts) {
+    try {
+      const d = new Date(ts);
+      const t = d.toLocaleTimeString(lang === "ar" ? "ar-MA" : "en-GB", { hour:"2-digit", minute:"2-digit" });
+      document.getElementById("last-saved-txt").textContent = tx().lastSaved + t;
+    } catch {}
+  }
+}
+
+function isRawCoords(loc) {
+  return /^-?\d+\.?\d*\s*,\s*-?\d+\.?\d*$/.test((loc || "").trim());
+}
+
+// ════════════════════════════════════════════════
+// LANGUAGE
+// ════════════════════════════════════════════════
+function switchLang(val) {
+  lang = val;
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+  updateAllText();
+  renderClients();
+  updateStatsUI();
+  updateLastSaved();
+}
+
+function updateAllText() {
+  const t = tx();
+  document.getElementById("brand-name").textContent = t.brandName;
+  document.getElementById("brand-sub").textContent = t.brandSub;
+  document.getElementById("stat-clients-lbl").textContent = t.statClients;
+  document.getElementById("stat-bal-lbl").textContent = t.statBalance;
+  document.getElementById("save-bar-txt").textContent = t.savedBar;
+  document.getElementById("search-input").placeholder = t.searchPH;
+  document.getElementById("btn-add-lbl").textContent = t.btnAdd;
+  document.getElementById("export-lbl").textContent = t.exportLbl;
+  document.getElementById("import-lbl").textContent = t.importLbl;
+  document.getElementById("lbl-name").textContent = t.lblName;
+  document.getElementById("lbl-phone").textContent = t.lblPhone;
+  document.getElementById("lbl-service").textContent = t.lblService;
+  document.getElementById("lbl-loc").textContent = t.lblLoc;
+  document.getElementById("lbl-total").textContent = t.lblTotal;
+  document.getElementById("lbl-paid").textContent = t.lblPaid;
+  document.getElementById("lbl-rem").textContent = t.lblRem;
+  document.getElementById("f-name").placeholder = t.phName;
+  document.getElementById("f-phone").placeholder = t.phPhone;
+  document.getElementById("f-service").placeholder = t.phService;
+  document.getElementById("f-loc").placeholder = t.phLoc;
+  document.getElementById("btn-cancel").textContent = t.btnCancel;
+  document.getElementById("del-title").textContent = t.delT;
+  document.getElementById("del-modal-title").textContent = t.delT;
+  document.getElementById("del-cancel-btn").textContent = t.delCancel;
+  document.getElementById("del-ok-btn").textContent = t.delOk;
+  document.getElementById("inv-title").textContent = t.invoiceTitle;
+  document.getElementById("inv-cancel-btn").textContent = t.btnCancel;
+  document.getElementById("inv-gen-btn").textContent = t.btnInvoice;
+  updateRem();
+  document.getElementById("status-txt").textContent = navigator.onLine ? t.netOnline : t.netOffline;
+}
+
+// ════════════════════════════════════════════════
+// STATS
+// ════════════════════════════════════════════════
+function updateStatsUI() {
+  const t = tx();
+  document.getElementById("stat-clients-val").textContent = clients.length;
+  const outstanding = clients.reduce((acc, c) => {
+    const r = c.totalPrice - c.amountPaid;
+    return r > 0 ? acc + r : acc;
+  }, 0);
+  document.getElementById("stat-bal-val").textContent = t.fmt(outstanding.toFixed(2));
+}
+
+// ════════════════════════════════════════════════
+// RENDER CLIENTS
+// ════════════════════════════════════════════════
+function renderClients() {
+  const t = tx();
+  const q = document.getElementById("search-input").value.trim().toLowerCase();
+  const filtered = q
+    ? clients.filter(c => c.name.toLowerCase().includes(q) || c.phone.includes(q) || (c.serviceDetails||"").toLowerCase().includes(q))
+    : clients;
+
+  const container = document.getElementById("clients-list");
+
+  // Destroy old maps
+  Object.values(maps).forEach(m => { try { m.remove(); } catch {} });
+  maps = {};
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">
+          <svg width="36" height="36" fill="none" stroke="#d4af37" stroke-width="1.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+        </div>
+        <h3>${t.noClients}</h3>
+        <p>${t.noClientsDesc}</p>
+        ${clients.length === 0 ? `<button class="btn-add-first" onclick="openForm()">${t.addFirstBtn}</button>` : ""}
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(c => {
+    const rem = Math.max(0, c.totalPrice - c.amountPaid);
+    const isPaid = rem === 0;
+    const hasMap = c.lat != null && c.lng != null;
+    return `
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="client-name">${esc(c.name)}</div>
+          <div class="client-phone">${esc(c.phone)}</div>
+        </div>
+        <span class="badge ${isPaid ? "badge-paid" : "badge-owed"}">${isPaid ? t.badgePaid : t.badgeOwed}</span>
+      </div>
+      <div class="card-divider"></div>
+      <div class="card-service">${esc(c.serviceDetails)}</div>
+      ${hasMap ? `
+      <div class="mini-map-wrap" onclick="openGoogleMaps(${c.lat},${c.lng})">
+        <div class="mini-map-container" id="map-${c.id}"></div>
+        <div class="mini-map-overlay">
+          <span class="mini-map-hint">${lang==="ar"?"افتح في خرائط جوجل":"Open in Google Maps"}</span>
+        </div>
+      </div>` : ""}
+      <div class="fin-grid">
+        <div class="fin-col">
+          <div class="fin-label">${t.colT}</div>
+          <div class="fin-val" style="color:#111">${t.fmtS(c.totalPrice.toFixed(2))}</div>
+        </div>
+        <div class="fin-col">
+          <div class="fin-label">${t.colP}</div>
+          <div class="fin-val" style="color:#059669">${t.fmtS(c.amountPaid.toFixed(2))}</div>
+        </div>
+        <div class="fin-col">
+          <div class="fin-label">${t.colR}</div>
+          <div class="fin-val" style="color:${isPaid?"#059669":"#d97706"}">${t.fmtS(rem.toFixed(2))}</div>
+        </div>
+      </div>
+      <div class="card-actions">
+        <button class="btn-edit" onclick="openEdit('${c.id}')">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+          </svg>
+          ${t.btnEdit}
+        </button>
+        <button class="btn-invoice" onclick="openInvoice('${c.id}')">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+          </svg>
+          ${t.btnInvoice}
+        </button>
+        <button class="btn-del" onclick="openDelete('${c.id}')">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+          </svg>
+          ${t.btnDel}
+        </button>
+      </div>
+    </div>`;
+  }).join("");
+
+  // Init Leaflet maps after DOM insert
+  setTimeout(() => {
+    filtered.forEach(c => {
+      if (c.lat == null || c.lng == null) return;
+      const el = document.getElementById("map-" + c.id);
+      if (!el) return;
+      const map = L.map(el, {
+        center: [c.lat, c.lng], zoom: 15,
+        zoomControl: false, attributionControl: false,
+        dragging: false, scrollWheelZoom: false,
+        doubleClickZoom: false, touchZoom: false,
+      });
+      L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+        subdomains: "abcd", maxZoom: 19,
+      }).addTo(map);
+      const goldIcon = L.divIcon({
+        html: `<div style="
+          width:18px;height:18px;background:#d4af37;border-radius:50%;
+          border:3px solid #fff;box-shadow:0 0 12px rgba(212,175,55,.8),0 2px 6px rgba(0,0,0,.4);
+        "></div>`,
+        className: "", iconSize: [18, 18], iconAnchor: [9, 9],
+      });
+      L.marker([c.lat, c.lng], { icon: goldIcon }).addTo(map);
+      maps[c.id] = map;
+    });
+  }, 60);
+}
+
+function esc(str) {
+  return (str || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+function openGoogleMaps(lat, lng) {
+  window.open("https://www.google.com/maps?q=" + lat + "," + lng, "_blank");
+}
+
+// ════════════════════════════════════════════════
+// FORM
+// ════════════════════════════════════════════════
+function openForm() {
+  const t = tx();
+  document.getElementById("form-title").textContent = t.modalAddT;
+  document.getElementById("form-sub").textContent = t.modalSub;
+  document.getElementById("btn-submit").textContent = t.btnCreate;
+  document.getElementById("form-icon-box").textContent = "✦";
+  document.getElementById("form-icon-box").style.background = "#d4af37";
+  document.getElementById("f-id").value = "";
+  document.getElementById("f-name").value = "";
+  document.getElementById("f-phone").value = "";
+  document.getElementById("f-service").value = "";
+  document.getElementById("f-loc").value = "";
+  document.getElementById("f-lat").value = "";
+  document.getElementById("f-lng").value = "";
+  document.getElementById("f-total").value = "";
+  document.getElementById("f-paid").value = "";
+  clearErrors();
+  updateRem();
+  document.getElementById("form-ov").classList.add("open");
+}
+
+function openEdit(id) {
+  const c = clients.find(x => x.id === id);
+  if (!c) return;
+  const t = tx();
+  document.getElementById("form-title").textContent = t.modalEditT;
+  document.getElementById("form-sub").textContent = t.modalSub;
+  document.getElementById("btn-submit").textContent = t.btnUpdate;
+  document.getElementById("form-icon-box").textContent = "✎";
+  document.getElementById("form-icon-box").style.background = "#b8972e";
+  document.getElementById("f-id").value = c.id;
+  document.getElementById("f-name").value = c.name;
+  document.getElementById("f-phone").value = c.phone;
+  document.getElementById("f-service").value = c.serviceDetails;
+  document.getElementById("f-loc").value = c.location || "";
+  document.getElementById("f-lat").value = c.lat != null ? c.lat : "";
+  document.getElementById("f-lng").value = c.lng != null ? c.lng : "";
+  document.getElementById("f-total").value = c.totalPrice;
+  document.getElementById("f-paid").value = c.amountPaid;
+  clearErrors();
+  updateRem();
+  document.getElementById("form-ov").classList.add("open");
+}
+
+function closeForm() {
+  document.getElementById("form-ov").classList.remove("open");
+}
+
+function clearErrors() {
+  ["name","phone","service","total","paid"].forEach(f => {
+    document.getElementById("err-"+f).style.display = "none";
+    document.getElementById("f-"+f).classList.remove("err");
+  });
+}
+
+function showErr(field, msg) {
+  const e = document.getElementById("err-"+field);
+  e.textContent = msg;
+  e.style.display = "block";
+  document.getElementById("f-"+field).classList.add("err");
+}
+
+function updateRem() {
+  const t = tx();
+  const total = parseFloat(document.getElementById("f-total").value) || 0;
+  const paid  = parseFloat(document.getElementById("f-paid").value)  || 0;
+  const rem   = Math.max(0, total - paid);
+  document.getElementById("rem-val").textContent = t.fmt(rem.toFixed(2));
+}
+
+function submitForm() {
+  const t = tx();
+  clearErrors();
+  let valid = true;
+  const name = document.getElementById("f-name").value.trim();
+  const phone = document.getElementById("f-phone").value.trim();
+  const service = document.getElementById("f-service").value.trim();
+  const total = document.getElementById("f-total").value.trim();
+  const paid = document.getElementById("f-paid").value.trim();
+
+  if (!name)    { showErr("name", t.errName);       valid = false; }
+  if (!phone)   { showErr("phone", t.errPhone);     valid = false; }
+  if (!service) { showErr("service", t.errService); valid = false; }
+  if (!total)   { showErr("total", t.errTotal);     valid = false; }
+  if (!paid && paid !== "0") { showErr("paid", t.errPaid); valid = false; }
+  if (!valid) return;
+
+  const latRaw = document.getElementById("f-lat").value.trim();
+  const lngRaw = document.getElementById("f-lng").value.trim();
+  const coordLat = latRaw !== "" ? parseFloat(latRaw) : null;
+  const coordLng = lngRaw !== "" ? parseFloat(lngRaw) : null;
+
+  const id = document.getElementById("f-id").value;
+  const client = {
+    id: id || uid(),
+    name, phone, serviceDetails: service,
+    location: document.getElementById("f-loc").value.trim(),
+    lat: coordLat, lng: coordLng,
+    totalPrice: parseFloat(total) || 0,
+    amountPaid: parseFloat(paid) || 0,
+    createdAt: id ? (clients.find(c=>c.id===id)||{}).createdAt || new Date().toISOString() : new Date().toISOString(),
+  };
+
+  if (id) {
+    const idx = clients.findIndex(c => c.id === id);
+    if (idx !== -1) clients[idx] = client;
+    showToast(t.tUpdated);
+  } else {
+    clients.unshift(client);
+    showToast(t.tAdded);
+  }
+
+  saveClients(clients);
+  closeForm();
+  renderClients();
+  updateStatsUI();
+}
+
+// ════════════════════════════════════════════════
+// GPS
+// ════════════════════════════════════════════════
+function getGPS() {
+  const t = tx();
+  const btn = document.getElementById("btn-gps");
+  btn.textContent = t.gpsLoad;
+  btn.disabled = true;
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const lat = pos.coords.latitude.toFixed(6);
+      const lng = pos.coords.longitude.toFixed(6);
+      document.getElementById("f-loc").value = lat + ", " + lng;
+      document.getElementById("f-lat").value = lat;
+      document.getElementById("f-lng").value = lng;
+      btn.textContent = "📍 GPS";
+      btn.disabled = false;
+    },
+    () => {
+      alert(t.gpsErr);
+      btn.textContent = "📍 GPS";
+      btn.disabled = false;
+    },
+    { timeout: 10000 }
+  );
+}
+
+// ════════════════════════════════════════════════
+// DELETE
+// ════════════════════════════════════════════════
+function openDelete(id) {
+  const t = tx();
+  deleteId = id;
+  const c = clients.find(x => x.id === id);
+  document.getElementById("del-desc").innerHTML =
+    t.delD.replace("هذا العميل", `<span class="del-name">${esc(c ? c.name : "")}</span>`)
+           .replace("This", `<span class="del-name">${esc(c ? c.name : "")}</span>`);
+  document.getElementById("del-ov").classList.add("open");
+}
+
+function closeDel() {
+  document.getElementById("del-ov").classList.remove("open");
+  deleteId = null;
+}
+
+function confirmDelete() {
+  if (!deleteId) return;
+  clients = clients.filter(c => c.id !== deleteId);
+  saveClients(clients);
+  showToast(tx().tDeleted);
+  closeDel();
+  renderClients();
+  updateStatsUI();
+}
+
+// ════════════════════════════════════════════════
+// INVOICE
+// ════════════════════════════════════════════════
+function openInvoice(id) {
+  const t = tx();
+  invoiceClient = clients.find(c => c.id === id);
+  if (!invoiceClient) return;
+  document.getElementById("inv-client-name").textContent = invoiceClient.name;
+  document.getElementById("inv-title").textContent = t.invoiceTitle;
+  document.getElementById("inv-cancel-btn").textContent = t.btnCancel;
+  document.getElementById("inv-gen-btn").textContent = t.btnInvoice;
+  document.getElementById("inv-gen-btn").disabled = false;
+  const msg = document.getElementById("inv-status-msg");
+  msg.style.display = "none";
+
+  const c = invoiceClient;
+  const rem = Math.max(0, c.totalPrice - c.amountPaid);
+  const isPaid = rem === 0;
+  const dateStr = new Date(c.createdAt).toLocaleDateString(
+    lang === "ar" ? "ar-MA" : "en-GB",
+    { year:"numeric", month:"long", day:"numeric" }
+  );
+
+  const displayLoc = (c.location && !isRawCoords(c.location)) ? c.location : null;
+  const hasGps = c.lat != null && c.lng != null;
+  const locHtml = (displayLoc || hasGps) ? `
+    <div style="grid-column:1/-1">
+      <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.1em;margin-bottom:2px">${lang==="ar"?"الموقع":"Location"}</div>
+      <div style="font-size:13px;color:#444">${displayLoc ? esc(displayLoc) : t.locGps}</div>
+    </div>` : "";
+
+  document.getElementById("invoice-preview").innerHTML = `
+    <div style="direction:${lang==="ar"?"rtl":"ltr"}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:#111">${lang==="ar"?"بلغازي ديكور":"Belrhazi Décor"}</div>
+          <div style="font-size:10px;color:#d4af37;letter-spacing:.2em;text-transform:uppercase;margin-top:2px">${lang==="ar"?"إدارة العملاء":"Client Management"}</div>
+        </div>
+        <svg width="40" height="40" viewBox="0 0 36 36" fill="none">
+          <polygon points="18,2 34,18 18,34 2,18" fill="none" stroke="#d4af37" stroke-width="1.5"/>
+          <polygon points="18,8 28,18 18,28 8,18" fill="none" stroke="#d4af37" stroke-width="1" opacity=".55"/>
+          <polygon points="18,13 23,18 18,23 13,18" fill="#d4af37" opacity=".95"/>
+        </svg>
+      </div>
+      <div class="inv-gold-line" style="margin-bottom:20px"></div>
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.15em;color:#d4af37;margin-bottom:14px">${t.invoiceTitle}</div>
+      <div class="inv-grid" style="margin-bottom:18px">
+        <div>
+          <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.1em;margin-bottom:2px">${t.invoiceClient}</div>
+          <div style="font-size:15px;font-weight:700;color:#111">${esc(c.name)}</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.1em;margin-bottom:2px">${t.invoicePhone}</div>
+          <div style="font-size:14px;color:#333;direction:ltr">${esc(c.phone)}</div>
+        </div>
+        <div style="grid-column:1/-1">
+          <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.1em;margin-bottom:2px">${t.invoiceService}</div>
+          <div style="font-size:13px;color:#444;line-height:1.5">${esc(c.serviceDetails)}</div>
+        </div>
+        ${locHtml}
+        <div>
+          <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.1em;margin-bottom:2px">${t.invoiceDate}</div>
+          <div style="font-size:13px;color:#444">${dateStr}</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:#aaa;text-transform:uppercase;letter-spacing:.1em;margin-bottom:2px">${t.invoiceStatus}</div>
+          <div style="font-size:13px;font-weight:700;color:${isPaid?"#059669":"#d97706"}">${isPaid ? t.badgePaid : t.badgeOwed}</div>
+        </div>
+      </div>
+      <div class="inv-fin">
+        <div class="inv-fin-grid">
+          <div class="inv-col">
+            <div class="inv-col-label">${t.invoiceTotal}</div>
+            <div class="inv-col-val" style="color:#111">${t.fmt(c.totalPrice.toFixed(2))}</div>
+          </div>
+          <div class="inv-col">
+            <div class="inv-col-label">${t.invoicePaid}</div>
+            <div class="inv-col-val" style="color:#059669">${t.fmt(c.amountPaid.toFixed(2))}</div>
+          </div>
+          <div class="inv-col">
+            <div class="inv-col-label">${t.invoiceRemaining}</div>
+            <div class="inv-col-val" style="color:${isPaid?"#059669":"#d97706"}">${t.fmt(rem.toFixed(2))}</div>
+          </div>
+        </div>
+      </div>
+      <div class="inv-gold-line" style="margin-top:20px;margin-bottom:12px"></div>
+      <div style="text-align:center;font-size:10px;color:#bbb;font-family:'Cormorant Garamond',serif">
+        © ${new Date().getFullYear()} Belrhazi Décor · بلغازي ديكور
+      </div>
+    </div>`;
+
+  document.getElementById("inv-ov").classList.add("open");
+}
+
+function closeInvoice() {
+  document.getElementById("inv-ov").classList.remove("open");
+  invoiceClient = null;
+}
+
+async function generateInvoice() {
+  if (!invoiceClient) return;
+  const t = tx();
+  const btn = document.getElementById("inv-gen-btn");
+  const msg = document.getElementById("inv-status-msg");
+  btn.disabled = true;
+  btn.textContent = t.invoiceSaving;
+  msg.style.display = "none";
+
+  try {
+    const preview = document.getElementById("invoice-preview");
+    const canvas = await html2canvas(preview, {
+      scale: 2, useCORS: true, backgroundColor: "#ffffff", logging: false,
+    });
+
+    const filename = "belrhazi-invoice-" + invoiceClient.name.replace(/\s+/g,"-") + "-" + Date.now() + ".png";
+    let saved = false;
+
+    if (window.showSaveFilePicker) {
+      try {
+        const fh = await window.showSaveFilePicker({
+          suggestedName: filename,
+          types: [{ description:"PNG Image", accept:{"image/png":[".png"]} }],
+        });
+        const writable = await fh.createWritable();
+        await new Promise((res, rej) => {
+          canvas.toBlob(async blob => {
+            try { await writable.write(blob); await writable.close(); res(); }
+            catch(e) { rej(e); }
+          }, "image/png");
+        });
+        saved = true;
+      } catch(e) {
+        if (e && e.name === "AbortError") {
+          btn.disabled = false;
+          btn.textContent = t.btnInvoice;
+          return;
+        }
+      }
+    }
+
+    if (!saved) {
+      const link = document.createElement("a");
+      link.download = filename;
+      link.href = canvas.toDataURL("image/png");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    msg.textContent = t.invoiceSaved;
+    msg.style.background = "#ecfdf5";
+    msg.style.border = "1px solid #a7f3d0";
+    msg.style.color = "#059669";
+    msg.style.display = "block";
+    btn.textContent = "✓ " + (lang==="ar"?"تم الحفظ!":"Saved!");
+
+    const phone = (invoiceClient.phone || "").replace(/\D/g,"");
+    setTimeout(() => {
+      window.open("https://wa.me/" + phone, "_blank");
+    }, 1200);
+
+  } catch(err) {
+    console.error("Invoice error:", err);
+    btn.disabled = false;
+    btn.textContent = t.btnInvoice;
+  }
+}
+
+// ════════════════════════════════════════════════
+// EXPORT / IMPORT
+// ════════════════════════════════════════════════
+function exportData() {
+  const data = { appVersion:"belrhazi-v3", exportedAt:new Date().toISOString(), clients };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type:"application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "belrhazi-clients-" + new Date().toISOString().slice(0,10) + ".json";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(tx().tExported);
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      const list = Array.isArray(parsed) ? parsed : (parsed.clients && Array.isArray(parsed.clients)) ? parsed.clients : null;
+      if (!list) throw new Error("Invalid");
+      clients = list;
+      saveClients(clients);
+      showToast(tx().tImported);
+      renderClients();
+      updateStatsUI();
+    } catch {
+      showToast("⚠ ملف غير صالح");
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = "";
+}
+
+// ════════════════════════════════════════════════
+// TOAST
+// ════════════════════════════════════════════════
+let toastTimer;
+function showToast(msg) {
+  const el = document.getElementById("toast");
+  document.getElementById("toast-msg").textContent = msg;
+  el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("show"), 3200);
+}
+
+// ════════════════════════════════════════════════
+// NETWORK STATUS
+// ════════════════════════════════════════════════
+function updateNetStatus() {
+  const on = navigator.onLine;
+  const t = tx();
+  const badge = document.getElementById("status-badge");
+  const dot = badge.querySelector(".dot");
+  document.getElementById("status-txt").textContent = on ? t.netOnline : t.netOffline;
+  dot.className = "dot " + (on ? "dot-green" : "dot-amber");
+}
+window.addEventListener("online",  updateNetStatus);
+window.addEventListener("offline", updateNetStatus);
+
+// ════════════════════════════════════════════════
+// ESC KEY
+// ════════════════════════════════════════════════
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") {
+    closeForm();
+    closeDel();
+    closeInvoice();
+  }
+});
+
+// ════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════
+document.getElementById("yr").textContent = new Date().getFullYear();
+clients = loadClients();
+updateStatsUI();
+renderClients();
+updateLastSaved();
+updateNetStatus();
+</script>
+<script src="https://replit-cdn.com/replit-pill/replit-pill.global.js" data-repl-id="222530f0-b750-4b0a-b7b8-4bae82762f24"></script></body>
+</html>
